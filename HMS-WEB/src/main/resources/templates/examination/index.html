@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Bàn khám bác sĩ & Kê đơn')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-stethoscope"></i> BÀN KHÁM CHUYÊN KHOA</div>
+                    <h1>Bàn khám bác sĩ & Kê đơn</h1>
+                    <p>Khám bệnh, chẩn đoán mã ICD, chỉ định cận lâm sàng và kê đơn thuốc điều trị cho người bệnh.</p>
+                </div>
+                <div class="heading-actions">
+                    <button type="button" class="btn btn-primary" data-open-modal="modal-quick-exam">
+                        <i class="fa-solid fa-prescription"></i> Kê đơn thuốc nhanh
+                    </button>
+                    <a th:href="@{/examination}" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate"></i> Làm mới hàng đợi
+                    </a>
+                </div>
+            </div>
+
+            <!-- 4 Summary Stats -->
+            <div class="stat-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Chờ khám</span>
+                        <span class="stat-icon tone-blue"><i class="fa-solid fa-user-clock"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${waitingExams}">2</div>
+                    <div class="stat-sub">Cần bác sĩ tiếp nhận</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Chờ xét nghiệm</span>
+                        <span class="stat-icon tone-orange"><i class="fa-solid fa-vials"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${labWaitingExams}">1</div>
+                    <div class="stat-sub">Đang thực hiện cận lâm sàng</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Đơn thuốc đã kê</span>
+                        <span class="stat-icon tone-cyan"><i class="fa-solid fa-prescription-bottle-medical"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${#lists.size(prescriptions)}">2</div>
+                    <div class="stat-sub">Đã chuyển sang quầy dược</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tổng lượt đang xử lý</span>
+                        <span class="stat-icon tone-violet"><i class="fa-solid fa-list-check"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${pendingTotal}">4</div>
+                    <div class="stat-sub">Chưa hoàn tất quy trình</div>
+                </div>
+            </div>
+
+            <!-- Section 1: Hàng đợi khám bệnh -->
+            <section class="section-card" style="margin-top: 24px;">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-user-doctor"></i> Hàng đợi khám & Kê đơn</div>
+                        <div class="section-card-subtitle">Mở chi tiết phiếu khám để chẩn đoán ICD, chỉ định xét nghiệm và kê đơn</div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-toolbar">
+                        <form th:action="@{/examination}" method="get" style="display: flex; gap: 10px; width: 100%; flex-wrap: wrap;">
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm mã phiếu hoặc tên bệnh nhân...">
+                            </label>
+
+                            <select name="status" class="filter-select">
+                                <option value="all">-- Tất cả trạng thái --</option>
+                                <option value="Chờ khám" th:selected="${status == 'Chờ khám'}">Chờ khám</option>
+                                <option value="Chờ xét nghiệm" th:selected="${status == 'Chờ xét nghiệm'}">Chờ xét nghiệm</option>
+                                <option value="Chờ thanh toán" th:selected="${status == 'Chờ thanh toán'}">Chờ thanh toán</option>
+                                <option value="Đã khám" th:selected="${status == 'Đã khám'}">Đã khám</option>
+                            </select>
+
+                            <select name="roomId" class="filter-select">
+                                <option value="all">-- Tất cả phòng khám --</option>
+                                <option th:each="r : ${rooms}" th:value="${r.idPk}" th:text="${r.tenPhong}" th:selected="${roomId == r.idPk}">Phòng khám</option>
+                            </select>
+
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc dữ liệu</button>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ PHIẾU</th>
+                                <th>BỆNH NHÂN</th>
+                                <th>PHÒNG KHÁM</th>
+                                <th>TRIỆU CHỨNG</th>
+                                <th>ĐƠN THUỐC</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ex : ${exams}">
+                                <td><span class="id-code" th:text="${ex.idPhieukham}">PKM001</span></td>
+                                <td>
+                                    <div class="patient-cell">
+                                        <span class="person-avatar" th:text="${ex.initials}">NA</span>
+                                        <span>
+                                            <span class="person-name" th:text="${ex.patientName}">Nguyễn Minh Anh</span>
+                                            <span class="person-meta" th:text="${ex.idBn}">BN001</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td th:text="${ex.roomName}">Phòng khám Nội</td>
+                                <td style="max-width: 220px; white-space: normal;" th:text="${ex.trieuChung != null and !ex.trieuChung.isEmpty() ? ex.trieuChung : 'Chưa ghi nhận'}">Hắt hơi sổ mũi</td>
+                                <td>
+                                    <span th:if="${ex.hasPrescription()}" class="pill" style="background: #e0f2fe; color: #0284c7; font-weight: 600;">
+                                        <i class="fa-solid fa-pills"></i> <span th:text="${ex.prescription.itemCount + ' loại thuốc'}">2 loại thuốc</span>
+                                    </span>
+                                    <span th:unless="${ex.hasPrescription()}" class="pill" style="background: #f1f5f9; color: #64748b;">
+                                        Chưa kê đơn
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${ex.trangThai == 'Hoàn tất' ? 'pill-success' : (ex.trangThai == 'Chờ khám' ? 'pill-primary' : 'pill-warning')}"
+                                          th:text="${ex.trangThai}">Chờ khám</span>
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a th:href="@{'/examination/detail/' + ${ex.idPhieukham}}" class="btn btn-secondary btn-sm">
+                                            <i class="fa-solid fa-stethoscope"></i> Khám & Kê đơn
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(exams)}">
+                                <td colspan="7" class="empty-state">Không có phiếu khám nào trong hàng đợi.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Danh sách đơn thuốc đã kê -->
+            <section class="section-card" style="margin-top: 24px;">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-prescription-bottle-medical"></i> Danh sách đơn thuốc đã kê</div>
+                        <div class="section-card-subtitle">Theo dõi đơn thuốc đã chỉ định và trạng thái xuất kho từ quầy dược</div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                        <tr>
+                            <th>MÃ ĐƠN</th>
+                            <th>BỆNH NHÂN</th>
+                            <th>PHIẾU KHÁM</th>
+                            <th>NGÀY KÊ</th>
+                            <th>CHI TIẾT THUỐC</th>
+                            <th>TỔNG TIỀN</th>
+                            <th>TRẠNG THÁI</th>
+                            <th>TÁC VỤ</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="rx : ${prescriptions}">
+                            <td><span class="id-code" th:text="${rx.idDt}">DT001</span></td>
+                            <td th:text="${rx.patientName != null ? rx.patientName : rx.patientId}">Nguyễn Minh Anh</td>
+                            <td><span class="id-code" th:text="${rx.idPhieukham}">PKM001</span></td>
+                            <td th:text="${rx.ngayKe}">2026-10-28</td>
+                            <td style="max-width: 260px; white-space: normal;" th:text="${rx.itemsSummary}">Paracetamol x 20; Cetirizine x 7</td>
+                            <td><strong th:text="${#numbers.formatDecimal(rx.tongTien, 0, 'POINT', 0, 'POINT') + ' đ'}">23.000 đ</strong></td>
+                            <td>
+                                <span class="pill"
+                                      th:classappend="${rx.trangThai == 'Đã cấp phát' ? 'pill-success' : 'pill-warning'}"
+                                      th:text="${rx.trangThai}">Chờ cấp phát</span>
+                            </td>
+                            <td>
+                                <a th:href="@{'/examination/detail/' + ${rx.idPhieukham}}" class="btn btn-secondary btn-sm">
+                                    <i class="fa-solid fa-pen-to-square"></i> Xem / Sửa
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(prescriptions)}">
+                            <td colspan="8" class="empty-state">Chưa có đơn thuốc nào được kê.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- MODAL: Kê đơn thuốc nhanh cho bệnh nhân -->
+<div id="modal-quick-exam" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 560px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Chọn bệnh nhân để kê đơn</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Chọn lượt khám đang chờ tiếp nhận</p>
+            </div>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div style="display: grid; gap: 8px;">
+            <div th:each="ex : ${exams}" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                <div>
+                    <strong th:text="${ex.patientName}">Nguyễn Minh Anh</strong>
+                    <div style="font-size: 11px; color: #64748b;" th:text="${ex.idPhieukham + ' · ' + ex.roomName}">PKM001 · Phòng khám Nội</div>
+                </div>
+                <a th:href="@{'/examination/detail/' + ${ex.idPhieukham}}" class="btn btn-primary btn-sm">
+                    Mở form khám & kê đơn <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+            <div th:if="${#lists.isEmpty(exams)}" class="empty-state">Không có phiếu khám nào đang chờ.</div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

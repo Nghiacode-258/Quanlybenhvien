@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Khối nhập "Chuyên khoa trực thuộc" + "Số / Vị trí phòng" — chỉ hiện khi vai trò = Bác sĩ.
+  Dùng trong form thêm và form sửa nhân sự (staff/index.html). Việc ẩn/hiện + lọc phòng theo
+  chuyên khoa do script ở cuối staff/index.html xử lý (dựa vào các thuộc tính data-*).
+  Tham số: curCk, curPk, curHocVi, curSoCchn = giá trị đang có sẵn (null khi thêm mới).
+-->
+<th:block th:fragment="fields(curCk, curPk, curHocVi, curSoCchn)">
+    <div data-doctor-fields hidden style="grid-column: 1 / -1;">
+        <div class="form-grid">
+            <label class="form-field">
+                <span>Chuyên khoa trực thuộc *</span>
+                <select name="idCk" data-ck-select disabled>
+                    <option value="">-- Chọn chuyên khoa --</option>
+                    <option th:each="ck : ${specialties}" th:value="${ck.idCk}" th:text="${ck.tenCk}"
+                            th:selected="${curCk != null and curCk == ck.idCk}">Nội tổng hợp</option>
+                </select>
+            </label>
+
+            <label class="form-field">
+                <span>Số / Vị trí phòng *</span>
+                <select name="idPk" data-room-select disabled>
+                    <option value="">-- Chọn phòng (theo chuyên khoa) --</option>
+                    <th:block th:each="r : ${rooms}">
+                        <option th:if="${r.trangThai == 'Hoạt động'}" th:value="${r.idPk}" th:attr="data-ck=${r.idCk}"
+                                th:text="${r.soPhong + ' · ' + r.tenPhong}"
+                                th:selected="${curPk != null and curPk == r.idPk}">A-101 · Phòng khám Nội</option>
+                    </th:block>
+                </select>
+            </label>
+
+            <label class="form-field">
+                <span>Học vị *</span>
+                <input type="text" name="hocVi" data-doctor-input disabled maxlength="50"
+                       th:value="${curHocVi}" placeholder="Ví dụ: Thạc sĩ, Bác sĩ CKI">
+            </label>
+
+            <label class="form-field">
+                <span>Số chứng chỉ hành nghề *</span>
+                <input type="text" name="soCchn" data-doctor-input disabled maxlength="9"
+                       pattern="[Cc][Cc][Hh][Nn]-[0-9]{4}" style="text-transform: uppercase;"
+                       title="Định dạng: CCHN- và 4 chữ số, ví dụ CCHN-0123"
+                       th:value="${curSoCchn}" placeholder="CCHN-0123">
+            </label>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

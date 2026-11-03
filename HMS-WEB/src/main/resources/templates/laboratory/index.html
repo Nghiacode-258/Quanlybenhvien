@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Xét nghiệm cận lâm sàng')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-vials"></i> CẬN LÂM SÀNG</div>
+                    <h1>Xét nghiệm cận lâm sàng</h1>
+                    <p>Tiếp nhận chỉ định từ bác sĩ, cập nhật kết quả và kết luận chuyên môn theo từng loại xét nghiệm.</p>
+                </div>
+            </div>
+
+            <div class="stat-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tổng chỉ định</span>
+                        <span class="stat-icon tone-blue"><i class="fa-solid fa-vials"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${totalCount}">2</div>
+                    <div class="stat-sub">Tất cả chỉ định trong hệ thống</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Chờ lấy mẫu / kết quả</span>
+                        <span class="stat-icon tone-orange"><i class="fa-solid fa-hourglass-half"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${pendingCount}">1</div>
+                    <div class="stat-sub">Cần thực hiện cận lâm sàng</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Đã hoàn thành</span>
+                        <span class="stat-icon tone-green"><i class="fa-solid fa-circle-check"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${completedCount}">1</div>
+                    <div class="stat-sub">Đã có kết quả trả về bác sĩ</div>
+                </div>
+            </div>
+
+            <section class="section-card" style="margin-top: 24px;">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-microscope"></i> Danh sách mẫu xét nghiệm</div>
+                        <div class="section-card-subtitle">Chỉ nhập kết quả theo dữ liệu chuyên môn đã được kiểm chuẩn</div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-toolbar">
+                        <form th:action="@{/laboratory}" method="get" style="display: flex; gap: 10px; width: 100%;">
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm mã kết quả, bệnh nhân, tên xét nghiệm...">
+                            </label>
+                            <select name="status" class="filter-select">
+                                <option value="all">-- Tất cả trạng thái --</option>
+                                <option value="Chờ lấy mẫu" th:selected="${status == 'Chờ lấy mẫu'}">Chờ lấy mẫu</option>
+                                <option value="Hoàn thành" th:selected="${status == 'Hoàn thành'}">Hoàn thành</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc</button>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ KQ</th>
+                                <th>BỆNH NHÂN</th>
+                                <th>LOẠI XÉT NGHIỆM</th>
+                                <th>PHIẾU KHÁM</th>
+                                <th>KẾT QUẢ</th>
+                                <th>KẾT LUẬN</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="lr : ${labResults}">
+                                <td><span class="id-code" th:text="${lr.idKqxn}">KQ001</span></td>
+                                <td th:text="${lr.patientName}">Nguyễn Minh Anh</td>
+                                <td><strong th:text="${lr.tenLxn}">Công thức máu</strong></td>
+                                <td><span class="id-code" th:text="${lr.idPhieukham}">PKM001</span></td>
+                                <td style="max-width: 200px; white-space: normal;" th:text="${lr.ketQua != null and !lr.ketQua.isEmpty() ? lr.ketQua : 'Chưa có kết quả'}">Bình thường</td>
+                                <td style="max-width: 200px; white-space: normal;" th:text="${lr.ketLuan != null and !lr.ketLuan.isEmpty() ? lr.ketLuan : '—'}">Chưa ghi nhận bất thường</td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${lr.trangThai == 'Hoàn thành' ? 'pill-success' : 'pill-warning'}"
+                                          th:text="${lr.trangThai}">Hoàn thành</span>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-secondary btn-sm"
+                                            th:attr="data-open-modal='modal-lr-' + ${lr.idKqxn}">
+                                        <i class="fa-solid fa-pen-to-square"></i> <span th:text="${lr.trangThai == 'Hoàn thành' ? 'Sửa' : 'Nhập KQ'}">Nhập KQ</span>
+                                    </button>
+
+                                    <!-- Modal per result -->
+                                    <div th:id="'modal-lr-' + ${lr.idKqxn}" class="modal-overlay">
+                                        <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 540px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                                                <div>
+                                                    <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Cập nhật kết quả xét nghiệm</h3>
+                                                    <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;" th:text="${lr.tenLxn + ' · Bệnh nhân: ' + lr.patientName}">Công thức máu</p>
+                                                </div>
+                                                <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+
+                                            <form th:action="@{/laboratory/result}" method="post">
+                                                <input type="hidden" name="idKqxn" th:value="${lr.idKqxn}">
+                                                <div class="form-grid">
+                                                    <label class="form-field full">
+                                                        <span>Kết quả xét nghiệm *</span>
+                                                        <textarea name="ketQua" rows="3" required placeholder="Nhập các chỉ số xét nghiệm đo được..." th:text="${lr.ketQua}"></textarea>
+                                                    </label>
+
+                                                    <label class="form-field full">
+                                                        <span>Kết luận chuyên môn</span>
+                                                        <input type="text" name="ketLuan" placeholder="Ví dụ: Trong giới hạn bình thường..." th:value="${lr.ketLuan}">
+                                                    </label>
+                                                </div>
+
+                                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                                                    <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Lưu kết quả</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(labResults)}">
+                                <td colspan="8" class="empty-state">Chưa có chỉ định xét nghiệm nào.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+</body>
+</html>
+

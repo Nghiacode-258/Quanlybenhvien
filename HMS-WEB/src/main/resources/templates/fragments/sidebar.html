@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<aside th:fragment="sidebar" class="sidebar">
+    <div class="brand">
+        <div class="brand-mark">
+            <i class="fa-solid fa-heart-pulse"></i>
+        </div>
+        <div>
+            <div class="brand-name">XônPanh</div>
+            <div class="brand-caption">HOSPITAL MANAGEMENT</div>
+        </div>
+        <button type="button" class="sidebar-close" id="sidebar-close" title="Đóng menu">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <div class="facility">
+        <div class="facility-icon">
+            <i class="fa-solid fa-hospital"></i>
+        </div>
+        <div>
+            <strong>Bệnh viện Đa khoa XônPanh</strong>
+            <span>Cơ sở Trung tâm · Hà Nội</span>
+        </div>
+        <i class="fa-solid fa-circle-check facility-chevron" style="color: #10b981;" title="Hệ thống trực tuyến"></i>
+    </div>
+
+    <div class="nav-label">PHÂN HỆ NGHIỆP VỤ</div>
+    <nav class="main-nav">
+        <!-- MANAGER ONLY: Dashboard -->
+        <a th:if="${currentRole.key == 'manager'}"
+           th:href="@{/dashboard}"
+           th:classappend="${activeNav == 'dashboard'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Tổng quan & KPI</span>
+        </a>
+
+        <!-- REGISTRATION: Manager, Nurse, Cashier -->
+        <a th:if="${currentRole.key == 'manager' or currentRole.key == 'nurse' or currentRole.key == 'cashier'}"
+           th:href="@{/registration}"
+           th:classappend="${activeNav == 'registration'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Tiếp đón & Đăng ký khám</span>
+        </a>
+
+        <!-- DOCTOR: Manager, Doctor -->
+        <a th:if="${currentRole.key == 'manager' or currentRole.key == 'doctor'}"
+           th:href="@{/examination}"
+           th:classappend="${activeNav == 'examination'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-stethoscope"></i>
+            <span>Bàn khám & Kê đơn</span>
+        </a>
+
+        <!-- LABORATORY: Manager, Nurse -->
+        <a th:if="${currentRole.key == 'manager' or currentRole.key == 'nurse'}"
+           th:href="@{/laboratory}"
+           th:classappend="${activeNav == 'laboratory'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-vials"></i>
+            <span>Xét nghiệm cận lâm sàng</span>
+        </a>
+
+        <!-- PHARMACY: Manager, Pharmacist -->
+        <a th:if="${currentRole.key == 'manager' or currentRole.key == 'pharmacist'}"
+           th:href="@{/pharmacy}"
+           th:classappend="${activeNav == 'pharmacy'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-capsules"></i>
+            <span>Dược & Cấp phát thuốc</span>
+        </a>
+
+        <!-- BILLING: Manager, Cashier -->
+        <a th:if="${currentRole.key == 'manager' or currentRole.key == 'cashier'}"
+           th:href="@{/billing}"
+           th:classappend="${activeNav == 'billing'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-file-invoice-dollar"></i>
+            <span>Thu viện phí</span>
+        </a>
+
+        <!-- MEDICAL RECORDS: Manager, Doctor, Nurse, Cashier -->
+        <a th:if="${currentRole.key != 'pharmacist'}"
+           th:href="@{/medical-records}"
+           th:classappend="${activeNav == 'medical-records'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-folder-medical"></i>
+            <span>Hồ sơ bệnh án</span>
+        </a>
+
+        <!-- STAFF & REPORTS: Manager ONLY -->
+        <a th:if="${currentRole.key == 'manager'}"
+           th:href="@{/staff}"
+           th:classappend="${activeNav == 'staff'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-user-doctor"></i>
+            <span>Nhân sự & Chuyên khoa</span>
+        </a>
+
+        <a th:if="${currentRole.key == 'manager'}"
+           th:href="@{/reports}"
+           th:classappend="${activeNav == 'reports'} ? ' active' : ''"
+           class="nav-link">
+            <i class="fa-solid fa-chart-column"></i>
+            <span>Báo cáo thống kê</span>
+        </a>
+    </nav>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-label">VAI TRÒ LÀM VIỆC</div>
+    <div class="role-nav main-nav">
+        <a th:href="@{/}" class="nav-link" style="color: #0284c7; font-weight: 600;">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            <span>Đổi vai trò làm việc</span>
+        </a>
+    </div>
+
+    <div class="sidebar-bottom">
+        <div class="support-card">
+            <div class="support-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <strong th:text="${currentRole.label}">Quản lý bệnh viện</strong>
+                <span th:text="${currentRole.employeeName}">Đỗ Văn Khánh</span>
+            </div>
+        </div>
+
+        <div class="sidebar-version">
+            <span class="live-dot"></span>
+            <span>Chế độ Demo · Dữ liệu mẫu</span>
+            <span class="version-no">v2.1</span>
+        </div>
+    </div>
+</aside>
+</body>
+</html>
+

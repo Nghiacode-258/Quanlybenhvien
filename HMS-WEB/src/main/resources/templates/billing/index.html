@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Thu viện phí & Hóa đơn')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-file-invoice-dollar"></i> VIỆN PHÍ & THANH TOÁN</div>
+                    <h1>Quản lý thu viện phí & Doanh thu</h1>
+                    <p>Tiếp nhận viện phí các lượt khám, đối soát phương thức thanh toán, theo dõi biểu đồ doanh thu tương tác theo ngày/tháng.</p>
+                </div>
+                <div class="heading-actions">
+                    <a th:href="@{/registration}" class="btn btn-primary">
+                        <i class="fa-solid fa-clipboard-list"></i> Đăng ký lượt khám mới
+                    </a>
+                </div>
+            </div>
+
+            <!-- BỘ LỌC THỜI GIAN THEO NGÀY / THÁNG / NĂM -->
+            <div class="section-card" style="margin-bottom: 20px; padding: 16px 20px;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px;">
+                    <!-- View Type Switcher Tabs -->
+                    <div class="module-tabs" style="margin-bottom: 0;">
+                        <a th:href="@{/billing(view='month', year=${year}, month=${month})}"
+                           class="module-tab" th:classappend="${view == 'month'} ? ' active' : ''">
+                            <i class="fa-solid fa-calendar-days"></i> Theo ngày trong tháng
+                        </a>
+                        <a th:href="@{/billing(view='year', year=${year})}"
+                           class="module-tab" th:classappend="${view == 'year'} ? ' active' : ''">
+                            <i class="fa-solid fa-calendar"></i> Theo 12 tháng trong năm
+                        </a>
+                        <a th:href="@{/billing(view='day', date=${date})}"
+                           class="module-tab" th:classappend="${view == 'day'} ? ' active' : ''">
+                            <i class="fa-solid fa-calendar-day"></i> Theo ngày cụ thể
+                        </a>
+                    </div>
+
+                    <!-- Filter Controls Form -->
+                    <form th:action="@{/billing}" method="get" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <input type="hidden" name="view" th:value="${view}">
+
+                        <!-- Năm (khi xem theo tháng hoặc theo năm) -->
+                        <div th:if="${view == 'month' or view == 'year'}" style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 13px; font-weight: 600; color: #475569;">Năm:</span>
+                            <select name="year" class="filter-select" onchange="this.form.submit()">
+                                <option th:each="y : ${allYears}" th:value="${y}" th:text="${'Năm ' + y}" th:selected="${y == year}"></option>
+                            </select>
+                        </div>
+
+                        <!-- Tháng (khi xem theo tháng) -->
+                        <div th:if="${view == 'month'}" style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 13px; font-weight: 600; color: #475569;">Tháng:</span>
+                            <select name="month" class="filter-select" onchange="this.form.submit()">
+                                <option th:each="m : ${allMonths}" th:value="${m}" th:text="${'Tháng ' + m}" th:selected="${m == month}"></option>
+                            </select>
+                        </div>
+
+                        <!-- Ngày (khi xem theo ngày cụ thể) -->
+                        <div th:if="${view == 'day'}" style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 13px; font-weight: 600; color: #475569;">Chọn ngày:</span>
+                            <input type="date" name="date" th:value="${date}" class="filter-select" style="padding: 6px 10px;" onchange="this.form.submit()">
+                        </div>
+
+                        <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrows-rotate"></i> Tải lại</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- KPI THỐNG KÊ DOANH THU TƯƠNG ỨNG VỚI PHẠM VI LỌC -->
+            <div class="stat-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tổng hóa đơn</span>
+                        <span class="stat-icon tone-blue"><i class="fa-solid fa-receipt"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${totalCount}">17</div>
+                    <div class="stat-sub">
+                        <span th:if="${selectedKey != null and !selectedKey.isEmpty()}" th:text="${'Theo lựa chọn: ' + selectedKey}">Chi tiết ngày</span>
+                        <span th:if="${selectedKey == null or selectedKey.isEmpty()}" th:text="${view == 'month' ? ('Tháng ' + month + '/' + year) : (view == 'year' ? ('Năm ' + year) : ('Ngày ' + date))}">Phạm vi</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Đã thanh toán (Thực thu)</span>
+                        <span class="stat-icon tone-green"><i class="fa-solid fa-circle-check"></i></span>
+                    </div>
+                    <div class="stat-value" style="font-size: 22px; color: #059669;" th:text="${#numbers.formatDecimal(totalPaid, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</div>
+                    <div class="stat-sub">Doanh thu viện phí đã thu đủ</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Chưa thanh toán (Chờ thu)</span>
+                        <span class="stat-icon tone-orange"><i class="fa-solid fa-hourglass-half"></i></span>
+                    </div>
+                    <div class="stat-value" style="font-size: 22px; color: #d97706;" th:text="${#numbers.formatDecimal(totalDue, 0, 'POINT', 0, 'POINT') + ' đ'}">438.000 đ</div>
+                    <div class="stat-sub">Khoản phải thu từ các lượt khám</div>
+                </div>
+            </div>
+
+            <!-- BIỂU ĐỒ DOANH THU TƯƠNG TÁC (CHART.JS) -->
+            <section class="section-card" style="margin-top: 20px;">
+                <div class="section-card-header" style="flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <div class="section-card-title">
+                            <i class="fa-solid fa-chart-column" style="color: #0284c7;"></i>
+                            <span th:if="${view == 'month'}" th:text="${'Biểu đồ doanh thu các ngày trong Tháng ' + month + '/' + year}">Biểu đồ doanh thu tháng</span>
+                            <span th:if="${view == 'year'}" th:text="${'Biểu đồ doanh thu 12 tháng trong Năm ' + year}">Biểu đồ doanh thu năm</span>
+                            <span th:if="${view == 'day'}" th:text="${'Biểu đồ doanh thu tuần xung quanh ngày ' + date}">Biểu đồ doanh thu</span>
+                        </div>
+                        <div class="section-card-subtitle">
+                            <i class="fa-solid fa-hand-pointer"></i> <strong>Nhấp trực tiếp vào từng cột trên biểu đồ</strong> để lọc danh sách hóa đơn và xem chỉ số chi tiết của ngày/tháng đó.
+                        </div>
+                    </div>
+
+                    <!-- Nút bỏ lọc khi đang drill-down vào 1 cột -->
+                    <div th:if="${selectedKey != null and !selectedKey.isEmpty()}">
+                        <a th:href="@{/billing(view=${view}, year=${year}, month=${month}, date=${date})}" class="btn btn-secondary btn-sm" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> Đang lọc: <strong th:text="${selectedKey}">2026-10-28</strong> · ✕ Bỏ lọc
+                        </a>
+                    </div>
+                </div>
+
+                <div class="section-card-body">
+                    <div style="position: relative; width: 100%; height: 280px;">
+                        <canvas id="revenueChart" width="800" height="280" style="display: block; width: 100%; height: 280px;"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DANH SÁCH HÓA ĐƠN VIỆN PHÍ -->
+            <section class="section-card" style="margin-top: 24px;">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-cash-register"></i> Danh sách hóa đơn viện phí</div>
+                        <div class="section-card-subtitle">
+                            <span th:if="${selectedKey != null and !selectedKey.isEmpty()}" th:text="${'Hiển thị hóa đơn phát sinh trong đợt lọc: ' + selectedKey}">Lọc theo đợt</span>
+                            <span th:if="${selectedKey == null or selectedKey.isEmpty()}" th:text="${'Hóa đơn trong ' + (view == 'month' ? ('Tháng ' + month + '/' + year) : (view == 'year' ? ('Năm ' + year) : ('Ngày ' + date)))}">Hóa đơn</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-toolbar">
+                        <form th:action="@{/billing}" method="get" style="display: flex; gap: 10px; width: 100%;">
+                            <input type="hidden" name="view" th:value="${view}">
+                            <input type="hidden" name="year" th:value="${year}">
+                            <input type="hidden" name="month" th:value="${month}">
+                            <input type="hidden" name="date" th:value="${date}">
+                            <input type="hidden" name="selectedKey" th:value="${selectedKey}">
+
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm mã hóa đơn, mã phiếu, tên bệnh nhân...">
+                            </label>
+                            <select name="status" class="filter-select">
+                                <option value="all">-- Tất cả trạng thái --</option>
+                                <option value="Chưa thanh toán" th:selected="${status == 'Chưa thanh toán'}">Chưa thanh toán</option>
+                                <option value="Đã thanh toán" th:selected="${status == 'Đã thanh toán'}">Đã thanh toán</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc</button>
+                            <a th:if="${search != null or (status != null and status != 'all')}"
+                               th:href="@{/billing(view=${view}, year=${year}, month=${month}, date=${date}, selectedKey=${selectedKey})}"
+                               class="btn btn-secondary btn-sm">Bỏ lọc</a>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ HÓA ĐƠN</th>
+                                <th>BỆNH NHÂN</th>
+                                <th>PHIẾU KHÁM</th>
+                                <th>KHOẢN THU</th>
+                                <th>SỐ TIỀN</th>
+                                <th>PHƯƠNG THỨC</th>
+                                <th>NGÀY THU</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="inv : ${invoices}">
+                                <td><span class="id-code" th:text="${inv.idHoadon}">HD001</span></td>
+                                <td>
+                                    <div class="patient-cell">
+                                        <span class="person-avatar" th:text="${inv.patientName != null and !inv.patientName.isEmpty() ? inv.patientName.substring(0, 2).toUpperCase() : 'BN'}">BN</span>
+                                        <span>
+                                            <span class="person-name" th:text="${inv.patientName != null ? inv.patientName : 'Bệnh nhân ' + inv.idBn}">Nguyễn Minh Anh</span>
+                                            <span class="person-meta" th:text="${inv.idBn != null ? inv.idBn : '—'}">BN001</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td><span class="id-code" th:text="${inv.idPhieukham}">PKM001</span></td>
+                                <td th:text="${inv.loaiThu}">Khám + xét nghiệm + thuốc</td>
+                                <td><strong style="color: #0369a1;" th:text="${#numbers.formatDecimal(inv.soTien, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</strong></td>
+                                <td th:text="${inv.phuongThucTt != null and !inv.phuongThucTt.isEmpty() ? inv.phuongThucTt : '—'}">Chuyển khoản</td>
+                                <td th:text="${inv.effectiveDate}">2026-10-28</td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${inv.isPaid() ? 'pill-success' : 'pill-warning'}"
+                                          th:text="${inv.trangThai}">Đã thanh toán</span>
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <!-- If unpaid, show pay modal button -->
+                                        <button th:if="${!inv.isPaid()}" type="button" class="btn btn-primary btn-sm"
+                                                th:attr="data-open-modal='modal-pay-' + ${inv.idHoadon}">
+                                            <i class="fa-solid fa-coins"></i> Thanh toán
+                                        </button>
+
+                                        <!-- Print invoice button -->
+                                        <a th:href="@{'/billing/print/' + ${inv.idHoadon}}" target="_blank" class="btn btn-secondary btn-sm" title="In phiếu thu">
+                                            <i class="fa-solid fa-print"></i> In phiếu
+                                        </a>
+                                    </div>
+
+                                    <!-- Pay Modal -->
+                                    <div th:id="'modal-pay-' + ${inv.idHoadon}" class="modal-overlay">
+                                        <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 500px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                                                <div>
+                                                    <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Xác nhận thu viện phí</h3>
+                                                    <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;" th:text="${'Hóa đơn: ' + inv.idHoadon + ' · ' + inv.patientName}">Hóa đơn HD002</p>
+                                                </div>
+                                                <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+
+                                            <form th:action="@{/billing/pay}" method="post">
+                                                <input type="hidden" name="idHoadon" th:value="${inv.idHoadon}">
+                                                <input type="hidden" name="view" th:value="${view}">
+                                                <input type="hidden" name="year" th:value="${year}">
+                                                <input type="hidden" name="month" th:value="${month}">
+                                                <input type="hidden" name="selectedKey" th:value="${selectedKey}">
+
+                                                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; text-align: center; margin-bottom: 16px;">
+                                                    <span style="font-size: 12px; color: #15803d; font-weight: 600;">Số tiền cần thanh toán</span>
+                                                    <div style="font-size: 26px; font-weight: 800; color: #166534;" th:text="${#numbers.formatDecimal(inv.soTien, 0, 'POINT', 0, 'POINT') + ' đ'}">198.000 đ</div>
+                                                    <small style="color: #15803d;" th:text="${'Khoản thu: ' + inv.loaiThu}">Khám + thuốc</small>
+                                                </div>
+
+                                                <div class="form-grid">
+                                                    <label class="form-field full">
+                                                        <span>Phương thức thanh toán *</span>
+                                                        <select name="phuongThucTt" required>
+                                                            <option value="Tiền mặt">Tiền mặt</option>
+                                                            <option value="Chuyển khoản">Chuyển khoản ngân hàng</option>
+                                                            <option value="Thẻ">Thẻ thanh toán (POS)</option>
+                                                            <option value="Bảo hiểm">Bảo hiểm / Đồng chi trả</option>
+                                                        </select>
+                                                    </label>
+
+                                                    <label class="form-field full">
+                                                        <span>Ngày thu tiền</span>
+                                                        <input type="date" name="thoiGianThu" th:value="${todayDate}" required>
+                                                    </label>
+                                                </div>
+
+                                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                                                    <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Xác nhận đã thu</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(invoices)}">
+                                <td colspan="9" class="empty-state" style="padding: 32px 16px;">
+                                    <i class="fa-solid fa-receipt" style="font-size: 28px; color: #94a3b8; margin-bottom: 8px; display: block;"></i>
+                                    <span th:if="${selectedKey != null and !selectedKey.isEmpty()}"
+                                          th:text="${'Không có giao dịch nào trong ngày/tháng ' + selectedKey}">Không có giao dịch</span>
+                                    <span th:if="${selectedKey == null or selectedKey.isEmpty()}">Không có hóa đơn nào phù hợp với bộ lọc.</span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Script khởi tạo biểu đồ tương tác kèm Dual-Engine Fallback (chống lỗi màn hình trắng) -->
+<script th:inline="javascript">
+/*<![CDATA[*/
+(function () {
+    var chartLabels = /*[[${report.chartLabels}]]*/ [];
+    var chartPaidData = /*[[${report.chartPaidData}]]*/ [];
+    var chartDueData = /*[[${report.chartDueData}]]*/ [];
+    var chartKeys = /*[[${report.chartKeys}]]*/ [];
+    var selectedKey = /*[[${selectedKey}]]*/ '';
+    var currentView = /*[[${view}]]*/ 'month';
+    var currentYear = /*[[${year}]]*/ 2026;
+    var currentMonth = /*[[${month}]]*/ 10;
+    var currentDate = /*[[${date}]]*/ '2026-10-28';
+
+    function initRevenueChart() {
+        var canvas = document.getElementById('revenueChart');
+        if (!canvas) return;
+
+        // Nếu Chart.js đã nạp thành công từ CDN -> Khởi tạo Chart.js Bar Chart
+        if (typeof Chart !== 'undefined') {
+            try {
+                var ctx = canvas.getContext('2d');
+                var paidColors = (chartKeys || []).map(function(k) {
+                    return (selectedKey && k === selectedKey) ? '#0284c7' : 'rgba(2, 132, 199, 0.75)';
+                });
+                var paidBorders = (chartKeys || []).map(function(k) {
+                    return (selectedKey && k === selectedKey) ? '#0c4a6e' : '#0284c7';
+                });
+                var borderWidths = (chartKeys || []).map(function(k) {
+                    return (selectedKey && k === selectedKey) ? 2.5 : 1;
+                });
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels || [],
+                        datasets: [
+                            {
+                                label: 'Đã thanh toán (VNĐ)',
+                                data: chartPaidData || [],
+                                backgroundColor: paidColors,
+                                borderColor: paidBorders,
+                                borderWidth: borderWidths,
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Chờ thanh toán (VNĐ)',
+                                data: chartDueData || [],
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                                borderColor: '#d97706',
+                                borderWidth: 1,
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 14,
+                                    font: { size: 12, weight: '600' }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(items) {
+                                        if (!items.length) return '';
+                                        var idx = items[0].dataIndex;
+                                        var key = chartKeys[idx];
+                                        return 'Mốc thời gian: ' + (key ? key : items[0].label);
+                                    },
+                                    label: function(context) {
+                                        var val = context.parsed.y || 0;
+                                        return context.dataset.label + ': ' + val.toLocaleString('vi-VN') + ' đ';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 } }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) return (value / 1000000) + ' Tr';
+                                        if (value >= 1000) return (value / 1000) + ' k';
+                                        return value;
+                                    },
+                                    font: { size: 11 }
+                                }
+                            }
+                        },
+                        onClick: function (evt, activeElements) {
+                            if (activeElements && activeElements.length > 0) {
+                                var firstElement = activeElements[0];
+                                var index = firstElement.index;
+                                var clickedKey = chartKeys[index];
+                                if (clickedKey) {
+                                    navigateDrilldown(clickedKey);
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            } catch (err) {
+                console.warn('Chart.js render failed, switching to Canvas 2D fallback:', err);
+            }
+        }
+
+        // FALLBACK ENGINE: Tự động vẽ bằng Canvas 2D thuần khi không có mạng / CDN bị chặn
+        renderCanvas2DFallback(canvas);
+    }
+
+    function navigateDrilldown(clickedKey) {
+        var targetUrl;
+        if (selectedKey === clickedKey) {
+            targetUrl = '/billing?view=' + encodeURIComponent(currentView) +
+                '&year=' + encodeURIComponent(currentYear) +
+                '&month=' + encodeURIComponent(currentMonth) +
+                '&date=' + encodeURIComponent(currentDate);
+        } else {
+            targetUrl = '/billing?view=' + encodeURIComponent(currentView) +
+                '&year=' + encodeURIComponent(currentYear) +
+                '&month=' + encodeURIComponent(currentMonth) +
+                '&date=' + encodeURIComponent(currentDate) +
+                '&selectedKey=' + encodeURIComponent(clickedKey);
+        }
+        window.location.href = targetUrl;
+    }
+
+    function renderCanvas2DFallback(canvas) {
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        var rect = canvas.getBoundingClientRect();
+        var width = rect.width || canvas.parentElement.clientWidth || 800;
+        var height = 280;
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+
+        var padLeft = 70;
+        var padRight = 24;
+        var padTop = 36;
+        var padBottom = 42;
+        var chartW = width - padLeft - padRight;
+        var chartH = height - padTop - padBottom;
+
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
+
+        // Legends
+        ctx.font = '600 12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(padLeft, 12, 14, 12);
+        ctx.fillStyle = '#334155';
+        ctx.fillText('Đã thanh toán (VNĐ)', padLeft + 20, 18);
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(padLeft + 160, 12, 14, 12);
+        ctx.fillStyle = '#334155';
+        ctx.fillText('Chờ thanh toán (VNĐ)', padLeft + 180, 18);
+
+        // Find max value
+        var labels = chartLabels || [];
+        var n = labels.length;
+        if (n === 0) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('Không có dữ liệu trong khoảng thời gian đã chọn', width / 2, height / 2);
+            return;
+        }
+
+        var maxVal = 0;
+        for (var i = 0; i < n; i++) {
+            var p = (chartPaidData && chartPaidData[i]) || 0;
+            var d = (chartDueData && chartDueData[i]) || 0;
+            if (p > maxVal) maxVal = p;
+            if (d > maxVal) maxVal = d;
+        }
+        if (maxVal <= 0) maxVal = 1000000;
+        var steps = 4;
+        var stepVal = Math.ceil(maxVal / steps / 100000) * 100000;
+        if (stepVal === 0) stepVal = 250000;
+        var ceilingVal = stepVal * steps;
+
+        // Draw Y grid lines
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+
+        for (var s = 0; s <= steps; s++) {
+            var yVal = s * stepVal;
+            var yPos = padTop + chartH - (s / steps) * chartH;
+
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padLeft, yPos);
+            ctx.lineTo(width - padRight, yPos);
+            ctx.stroke();
+
+            var displayVal = yVal >= 1000000 ? (yVal / 1000000).toFixed(1).replace('.0','') + ' Tr'
+                           : (yVal >= 1000 ? (yVal / 1000).toFixed(0) + ' k' : yVal + '');
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(displayVal, padLeft - 8, yPos);
+        }
+
+        // Draw Bars
+        var colWidth = chartW / n;
+        var barW = Math.max(4, Math.min(colWidth * 0.35, 20));
+        var hitBoxes = [];
+
+        for (var idx = 0; idx < n; idx++) {
+            var pVal = (chartPaidData && chartPaidData[idx]) || 0;
+            var dVal = (chartDueData && chartDueData[idx]) || 0;
+            var k = chartKeys && chartKeys[idx];
+            var isSelected = selectedKey && k === selectedKey;
+
+            var centerX = padLeft + idx * colWidth + colWidth / 2;
+            var pHeight = Math.max(0, (pVal / ceilingVal) * chartH);
+            var dHeight = Math.max(0, (dVal / ceilingVal) * chartH);
+
+            var pX = centerX - barW - 1;
+            var pY = padTop + chartH - pHeight;
+            var dX = centerX + 1;
+            var dY = padTop + chartH - dHeight;
+
+            // Highlight column background if selected
+            if (isSelected) {
+                ctx.fillStyle = 'rgba(2, 132, 199, 0.08)';
+                ctx.fillRect(padLeft + idx * colWidth, padTop, colWidth, chartH);
+            }
+
+            // Paid bar
+            ctx.fillStyle = isSelected ? '#0284c7' : 'rgba(2, 132, 199, 0.75)';
+            ctx.fillRect(pX, pY, barW, pHeight);
+            if (isSelected) {
+                ctx.strokeStyle = '#0c4a6e';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(pX, pY, barW, pHeight);
+            }
+
+            // Due bar
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.75)';
+            ctx.fillRect(dX, dY, barW, dHeight);
+
+            // X-axis label
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.font = isSelected ? 'bold 11px sans-serif' : '11px sans-serif';
+            ctx.fillStyle = isSelected ? '#0284c7' : '#64748b';
+            ctx.fillText(labels[idx], centerX, padTop + chartH + 8);
+
+            hitBoxes.push({
+                index: idx,
+                key: k,
+                label: labels[idx],
+                paid: pVal,
+                due: dVal,
+                x1: padLeft + idx * colWidth,
+                x2: padLeft + (idx + 1) * colWidth
+            });
+        }
+
+        // Attach mouse events once
+        if (!canvas.__fallbackBound) {
+            canvas.__fallbackBound = true;
+            canvas.style.cursor = 'pointer';
+
+            var tip = document.getElementById('canvas-chart-tooltip');
+            if (!tip) {
+                tip = document.createElement('div');
+                tip.id = 'canvas-chart-tooltip';
+                tip.style.position = 'fixed';
+                tip.style.display = 'none';
+                tip.style.pointerEvents = 'none';
+                tip.style.background = 'rgba(15, 23, 42, 0.9)';
+                tip.style.color = '#fff';
+                tip.style.padding = '8px 12px';
+                tip.style.borderRadius = '8px';
+                tip.style.fontSize = '12px';
+                tip.style.zIndex = '9999';
+                tip.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                document.body.appendChild(tip);
+            }
+
+            canvas.addEventListener('mousemove', function(e) {
+                var bounds = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - bounds.left;
+                var hit = null;
+                for (var b = 0; b < hitBoxes.length; b++) {
+                    if (mouseX >= hitBoxes[b].x1 && mouseX <= hitBoxes[b].x2) {
+                        hit = hitBoxes[b];
+                        break;
+                    }
+                }
+                if (hit) {
+                    tip.innerHTML = '<div style="font-weight:700; margin-bottom:4px;">' + (hit.key || hit.label) + '</div>' +
+                                    '<div style="color:#38bdf8;">Đã thanh toán: ' + Number(hit.paid).toLocaleString('vi-VN') + ' đ</div>' +
+                                    '<div style="color:#fbbf24;">Chờ thanh toán: ' + Number(hit.due).toLocaleString('vi-VN') + ' đ</div>';
+                    tip.style.left = (e.clientX + 14) + 'px';
+                    tip.style.top = (e.clientY + 14) + 'px';
+                    tip.style.display = 'block';
+                } else {
+                    tip.style.display = 'none';
+                }
+            });
+
+            canvas.addEventListener('mouseleave', function() {
+                if (tip) tip.style.display = 'none';
+            });
+
+            canvas.addEventListener('click', function(e) {
+                var bounds = canvas.getBoundingClientRect();
+                var mouseX = e.clientX - bounds.left;
+                for (var b = 0; b < hitBoxes.length; b++) {
+                    if (mouseX >= hitBoxes[b].x1 && mouseX <= hitBoxes[b].x2) {
+                        if (hitBoxes[b].key) {
+                            navigateDrilldown(hitBoxes[b].key);
+                        }
+                        break;
+                    }
+                }
+            });
+
+            window.addEventListener('resize', function() {
+                renderCanvas2DFallback(canvas);
+            });
+        }
+    }
+
+    // Đảm bảo chạy ngay khi DOM sẵn sàng hoặc nếu đã sẵn sàng thì khởi tạo ngay lập tức
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(initRevenueChart, 1);
+    } else {
+        document.addEventListener('DOMContentLoaded', initRevenueChart);
+    }
+})();
+/*]]>*/
+</script>
+</body>
+</html>

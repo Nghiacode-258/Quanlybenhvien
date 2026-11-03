@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Dược & Cấp phát thuốc')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-capsules"></i> KHO DƯỢC & CẤP PHÁT</div>
+                    <h1>Dược & Cấp phát thuốc</h1>
+                    <p>Quản lý danh mục dược phẩm, theo dõi tồn kho theo lô hạn sử dụng và cấp phát thuốc theo đơn của bác sĩ.</p>
+                </div>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="module-tabs" style="margin-bottom: 20px;">
+                <a th:href="@{/pharmacy(tab='prescriptions', search=${search})}"
+                   class="module-tab" th:classappend="${activeTab == 'prescriptions'} ? ' active' : ''">
+                    <i class="fa-solid fa-file-prescription"></i> Đơn thuốc chờ cấp
+                    <span class="nav-count" th:text="${pendingOrders}">1</span>
+                </a>
+                <a th:href="@{/pharmacy(tab='medicines', search=${search})}"
+                   class="module-tab" th:classappend="${activeTab == 'medicines'} ? ' active' : ''">
+                    <i class="fa-solid fa-pills"></i> Danh mục thuốc
+                    <span class="nav-count" th:text="${totalMedicines}">6</span>
+                </a>
+                <a th:href="@{/pharmacy(tab='lots', search=${search})}"
+                   class="module-tab" th:classappend="${activeTab == 'lots'} ? ' active' : ''">
+                    <i class="fa-solid fa-boxes-stacked"></i> Lô thuốc & Hạn dùng
+                    <span class="nav-count" th:text="${#lists.size(lots)}">8</span>
+                    <span th:if="${expiredLotsCount > 0}" class="nav-count" style="background: #ef4444; color: white; margin-left: 4px;" title="Lô thuốc đã hết hạn" th:text="${expiredLotsCount + ' hết hạn'}">2 hết hạn</span>
+                </a>
+            </div>
+
+            <!-- TAB 1: Đơn thuốc chờ cấp phát -->
+            <section th:if="${activeTab == 'prescriptions'}" class="section-card">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-prescription-bottle-medical"></i> Đơn thuốc cần xuất kho</div>
+                        <div class="section-card-subtitle">Kiểm tra thông tin chi tiết từng loại thuốc trước khi xác nhận cấp phát</div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="inline-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Khi bấm <strong>Cấp phát</strong>, hệ thống tự động trừ kho lô theo nguyên tắc FEFO (lô hết hạn trước xuất trước) và đồng bộ tổng tồn kho.</span>
+                    </div>
+
+                    <div class="table-wrap" style="margin-top: 14px;">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ ĐƠN</th>
+                                <th>MÃ PHIẾU</th>
+                                <th>BỆNH NHÂN</th>
+                                <th>NGÀY KÊ</th>
+                                <th>DANH MỤC THUỐC</th>
+                                <th>TỔNG TIỀN</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="rx : ${prescriptions}">
+                                <td><span class="id-code" th:text="${rx.idDt}">DT001</span></td>
+                                <td><span class="id-code" th:text="${rx.idPhieukham}">PKM001</span></td>
+                                <td th:text="${rx.patientName != null ? rx.patientName : rx.patientId}">Nguyễn Minh Anh</td>
+                                <td th:text="${rx.ngayKe}">2026-10-28</td>
+                                <td style="max-width: 280px; white-space: normal;" th:text="${rx.itemsSummary}">Cetirizine 10mg x 7; Paracetamol 500mg x 20</td>
+                                <td><strong th:text="${#numbers.formatDecimal(rx.tongTien, 0, 'POINT', 0, 'POINT') + ' đ'}">23.000 đ</strong></td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${rx.trangThai == 'Đã cấp phát' ? 'pill-success' : 'pill-warning'}"
+                                          th:text="${rx.trangThai}">Chờ cấp phát</span>
+                                </td>
+                                <td>
+                                    <form th:if="${rx.trangThai == 'Chờ cấp phát'}" th:action="@{/pharmacy/dispense}" method="post" style="display: inline;">
+                                        <input type="hidden" name="idDt" th:value="${rx.idDt}">
+                                        <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Xác nhận cấp phát đơn thuốc ' + this.form.idDt.value + '?')">
+                                            <i class="fa-solid fa-check"></i> Cấp phát
+                                        </button>
+                                    </form>
+                                    <span th:if="${rx.trangThai == 'Đã cấp phát'}" class="small-muted">
+                                        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Đã xuất kho
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(prescriptions)}">
+                                <td colspan="8" class="empty-state">Không có đơn thuốc nào.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: Danh mục thuốc -->
+            <section th:if="${activeTab == 'medicines'}" class="section-card">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-pills"></i> Danh mục dược phẩm & Tồn kho</div>
+                        <div class="section-card-subtitle">Quản lý các mặt hàng thuốc trong danh mục bệnh viện</div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" data-open-modal="modal-add-medicine">
+                            <i class="fa-solid fa-plus"></i> Thêm thuốc mới
+                        </button>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-toolbar" style="margin-bottom: 14px;">
+                        <form th:action="@{/pharmacy}" method="get" style="display: flex; gap: 10px; width: 100%;">
+                            <input type="hidden" name="tab" value="medicines">
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm mã thuốc, tên thuốc, nhà sản xuất...">
+                            </label>
+                            <select name="status" class="filter-select">
+                                <option value="all">-- Tất cả trạng thái --</option>
+                                <option value="outOfStock" th:selected="${status == 'outOfStock'}">Hết hàng</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc</button>
+                            <a th:if="${search != null or status != null}" th:href="@{/pharmacy(tab='medicines')}" class="btn btn-secondary btn-sm">Bỏ lọc</a>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ THUỐC</th>
+                                <th>TÊN THUỐC</th>
+                                <th>ĐƠN VỊ</th>
+                                <th>GIÁ BÁN</th>
+                                <th>TỒN KHO</th>
+                                <th>KÊ ĐƠN</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>THAO TÁC</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="m : ${medicines}">
+                                <td><span class="id-code" th:text="${m.idThuoc}">T001</span></td>
+                                <td>
+                                    <strong th:text="${m.tenThuoc}">Paracetamol 500 mg</strong>
+                                    <div th:if="${m.nhaSanXuat != null and !m.nhaSanXuat.isEmpty()}" class="person-meta" th:text="${m.nhaSanXuat}">DHG Pharma</div>
+                                </td>
+                                <td th:text="${m.donVi}">viên</td>
+                                <td><strong style="color: #0369a1;" th:text="${#numbers.formatDecimal(m.giaBan, 0, 'POINT', 0, 'POINT') + ' đ'}">800 đ</strong></td>
+                                <td><strong th:text="${m.soLuongTonKho + ' ' + m.donVi}">420 viên</strong></td>
+                                <td>
+                                    <span class="pill" th:text="${m.canKeDon ? 'Theo đơn' : 'Không bắt buộc'}">Theo đơn</span>
+                                </td>
+                                <td>
+                                    <span class="pill" th:classappend="${m.inventoryBadgeClass}" th:text="${m.inventoryStatusText}">Bình thường</span>
+                                </td>
+                                <td>
+                                    <form th:action="@{/pharmacy/medicine/delete}" method="post" style="display: inline;">
+                                        <input type="hidden" name="idThuoc" th:value="${m.idThuoc}">
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="color: #dc2626;"
+                                                th:attr="onclick='return confirm(\'Xác nhận xóa thuốc ' + ${m.tenThuoc} + ' (' + ${m.idThuoc} + ')?\nThuốc đã có lô hoặc nằm trong đơn thuốc sẽ không xóa được.\');'">
+                                            <i class="fa-solid fa-trash-can"></i> Xóa
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(medicines)}">
+                                <td colspan="8" class="empty-state">Không tìm thấy thuốc nào phù hợp.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: Lô thuốc & Hạn dùng -->
+            <section th:if="${activeTab == 'lots'}" class="section-card">
+                <div class="section-card-header">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-boxes-stacked"></i> Danh sách lô thuốc</div>
+                        <div class="section-card-subtitle">Theo dõi hạn sử dụng, số lượng nhập, tồn kho và xử lý lô hết hạn</div>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-primary" data-open-modal="modal-add-lot">
+                            <i class="fa-solid fa-boxes-packing"></i> Nhập lô thuốc
+                        </button>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <!-- Cảnh báo lô hết hạn nếu có -->
+                    <div th:if="${expiredLotsCount > 0}" class="inline-note" style="background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; margin-bottom: 14px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #dc2626;"></i>
+                        <span>Phát hiện <strong><span th:text="${expiredLotsCount}">2</span> lô thuốc đã hết hạn sử dụng</strong> trong kho! Vui lòng kiểm tra các dòng được đánh dấu đỏ và bấm <em>Loại bỏ lô hết hạn</em> để trừ tồn kho theo quy định.</span>
+                    </div>
+
+                    <div class="table-toolbar" style="margin-bottom: 14px;">
+                        <form th:action="@{/pharmacy}" method="get" style="display: flex; gap: 10px; width: 100%;">
+                            <input type="hidden" name="tab" value="lots">
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm số lô, mã thuốc, tên thuốc, nhà cung cấp...">
+                            </label>
+                            <select name="status" class="filter-select">
+                                <option value="all">-- Tất cả tình trạng --</option>
+                                <option value="expired" th:selected="${status == 'expired'}">Hết hạn (Cần loại bỏ)</option>
+                                <option value="expiring" th:selected="${status == 'expiring'}">Sắp hết hạn (&le; 60 ngày)</option>
+                                <option value="valid" th:selected="${status == 'valid'}">Còn hạn</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc</button>
+                            <a th:if="${search != null or status != null}" th:href="@{/pharmacy(tab='lots')}" class="btn btn-secondary btn-sm">Bỏ lọc</a>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>SỐ LÔ</th>
+                                <th>MÃ THUỐC</th>
+                                <th>TÊN THUỐC</th>
+                                <th>NGÀY NHẬP</th>
+                                <th>NGÀY SX</th>
+                                <th>HẠN SỬ DỤNG</th>
+                                <th>NHẬP</th>
+                                <th>TỒN KHO</th>
+                                <th>GIÁ NHẬP</th>
+                                <th>GIÁ BÁN</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>THAO TÁC</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="lot : ${lots}">
+                                <td><span class="id-code" th:text="${lot.soLo}">PAR-2608</span></td>
+                                <td><span class="id-code" th:text="${lot.idThuoc}">T001</span></td>
+                                <td>
+                                    <strong th:text="${lot.tenThuoc}">Paracetamol 500 mg</strong>
+                                    <div th:if="${lot.nhaCungCap != null and !lot.nhaCungCap.isEmpty()}" class="person-meta" th:text="${lot.nhaCungCap}">TW1</div>
+                                </td>
+                                <td th:text="${lot.ngayNhap}">2026-06-10</td>
+                                <td th:text="${lot.ngaySanXuat != null and !lot.ngaySanXuat.isEmpty() ? lot.ngaySanXuat : '—'}">2026-06-01</td>
+                                <td>
+                                    <strong th:style="${lot.isExpired() ? 'color: #dc2626;' : (lot.isExpiringSoon() ? 'color: #d97706;' : '')}"
+                                            th:text="${lot.hanSuDung}">2026-12-15</strong>
+                                </td>
+                                <td th:text="${lot.soLuongNhap}">500</td>
+                                <td><strong th:text="${lot.soLuongTon + ' ' + (lot.donVi != null ? lot.donVi : '')}">300 viên</strong></td>
+                                <td th:text="${#numbers.formatDecimal(lot.giaNhap, 0, 'POINT', 0, 'POINT') + ' đ'}">450 đ</td>
+                                <td><strong th:text="${#numbers.formatDecimal(lot.giaBan, 0, 'POINT', 0, 'POINT') + ' đ'}">800 đ</strong></td>
+                                <td>
+                                    <span class="pill" th:classappend="${lot.expiryBadgeClass}" th:text="${lot.expiryStatusText}">Còn hạn</span>
+                                </td>
+                                <td>
+                                    <!-- NÚT CHỈ HIỂN THỊ KHI LÔ THỰC SỰ ĐÃ HẾT HẠN VÀ CHƯA BỊ LOẠI BỎ -->
+                                    <div th:if="${lot.isExpired() and !lot.isRemoved()}">
+                                        <form th:action="@{/pharmacy/lot/delete}" method="post" style="display: inline;">
+                                            <input type="hidden" name="idLo" th:value="${lot.idLo}">
+                                            <button type="submit" class="btn btn-sm" style="background: #ef4444; color: white;"
+                                                    th:attr="onclick='return confirm(\'CẢNH BÁO LOẠI BỎ LÔ THUỐC HẾT HẠN:\n- Thuốc: ' + ${lot.tenThuoc} + ' (' + ${lot.idThuoc} + ')\n- Số lô: ' + ${lot.soLo} + '\n- Hạn dùng: ' + ${lot.hanSuDung} + '\n- Số lượng tồn cần hủy: ' + ${lot.soLuongTon} + ' ' + ${lot.donVi} + '\n\nXác nhận loại bỏ lô thuốc hết hạn này khỏi kho tồn khả dụng?\');'">
+                                                <i class="fa-solid fa-trash-can"></i> Loại bỏ lô hết hạn
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <span th:if="${lot.isRemoved()}" class="small-muted">
+                                        <i class="fa-solid fa-ban" style="color: #ef4444;"></i> Đã loại bỏ
+                                    </span>
+                                    <span th:if="${!lot.isExpired() and !lot.isRemoved()}" class="small-muted">
+                                        <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Hoạt động
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(lots)}">
+                                <td colspan="12" class="empty-state">Không có lô thuốc nào.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Modal 1: Thêm thuốc mới -->
+<div id="modal-add-medicine" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 600px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Thêm thuốc mới vào danh mục</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Nhập thông tin dược phẩm vào hệ thống kho XônPanh</p>
+            </div>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form th:action="@{/pharmacy/medicine/create}" method="post">
+            <div class="form-grid">
+                <label class="form-field">
+                    <span>Mã thuốc (Tùy chọn, để trống tự sinh)</span>
+                    <input type="text" name="idThuoc" placeholder="Ví dụ: T007">
+                </label>
+                <label class="form-field">
+                    <span>Tên thuốc <strong style="color: #ef4444;">*</strong></span>
+                    <input type="text" name="tenThuoc" required placeholder="Ví dụ: Augmentin 1g">
+                </label>
+                <label class="form-field">
+                    <span>Đơn vị tính <strong style="color: #ef4444;">*</strong></span>
+                    <input type="text" name="donVi" required placeholder="viên, gói, chai, v.v.">
+                </label>
+                <label class="form-field">
+                    <span>Giá bán (VNĐ) <strong style="color: #ef4444;">*</strong></span>
+                    <input type="number" name="giaBan" min="0" step="100" value="5000" required>
+                </label>
+                <label class="form-field full">
+                    <span>Nhà sản xuất</span>
+                    <input type="text" name="nhaSanXuat" required placeholder="Ví dụ: GSK, DHG Pharma, Imexpharm..." >
+                </label>
+                <label class="form-field full" style="display: flex; align-items: center; gap: 8px; flex-direction: row; margin-top: 8px;">
+                    <input type="checkbox" name="canKeDon" value="true" style="width: auto;">
+                    <span>Yêu cầu bác sĩ kê đơn (Thuốc kê đơn ETC)</span>
+                </label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Lưu thuốc mới</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Nhập lô thuốc mới -->
+<div id="modal-add-lot" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 620px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Nhập lô thuốc mới</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Cập nhật lô hàng nhập kho, số lượng và thời hạn sử dụng</p>
+            </div>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form th:action="@{/pharmacy/lot/create}" method="post">
+            <div class="form-grid">
+                <label class="form-field full">
+                    <span>Chọn thuốc từ danh mục <strong style="color: #ef4444;">*</strong></span>
+                    <select name="idThuoc" required>
+                        <option value="">-- Chọn thuốc --</option>
+                        <option th:each="m : ${allMedicines}"
+                                th:value="${m.idThuoc}"
+                                th:text="${'[' + m.idThuoc + '] ' + m.tenThuoc + ' (' + m.donVi + ')'}"></option>
+                    </select>
+                </label>
+                <label class="form-field">
+                    <span>Số lô sản xuất <strong style="color: #ef4444;">*</strong></span>
+                    <input type="text" name="soLo" required placeholder="Ví dụ: LOT-2026-X1">
+                </label>
+                <label class="form-field">
+                    <span>Số lượng nhập <strong style="color: #ef4444;">*</strong></span>
+                    <input type="number" name="soLuongNhap" min="1" value="100" required>
+                </label>
+                <label class="form-field">
+                    <span>Ngày nhập kho</span>
+                    <input type="date" name="ngayNhap" th:value="${#calendars.format(#calendars.createNow(), 'yyyy-MM-dd')}">
+                </label>
+                <label class="form-field">
+                    <span>Ngày sản xuất</span>
+                    <input type="date" name="ngaySanXuat">
+                </label>
+                <label class="form-field">
+                    <span>Hạn sử dụng <strong style="color: #ef4444;">*</strong></span>
+                    <input type="date" name="hanSuDung" required>
+                </label>
+                <label class="form-field">
+                    <span>Giá nhập (VNĐ) <strong style="color: #ef4444;">*</strong></span>
+                    <input type="number" name="giaNhap" min="0" step="100" value="1000" required>
+                </label>
+                <label class="form-field">
+                    <span>Giá bán (VNĐ)</span>
+                    <input type="number" name="giaBan" min="0" step="100" placeholder="Mặc định theo giá bán thuốc">
+                </label>
+                <label class="form-field">
+                    <span>Nhà cung cấp</span>
+                    <input type="text" name="nhaCungCap" placeholder="Ví dụ: Dược TW1, Codupha, v.v.">
+                </label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-boxes-packing"></i> Xác nhận nhập lô</button>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="options">
+    <option value=""
+            th:text="${idPk == null || idPk.isBlank()} ? '-- Chọn phòng khám trước --'
+                     : (${#lists.isEmpty(doctors)} ? 'Phòng này chưa có bác sĩ' : '-- Chọn bác sĩ --')"></option>
+    <option th:each="d : ${doctors}" th:value="${d.idNv}"
+            th:text="${d.hoTen + ' (' + d.idNv + ')'}"></option>
+</th:block>
+</body>
+</html>

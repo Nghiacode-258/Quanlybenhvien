@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0284c7">
+    <title>Chọn vai trò | XônPanh HMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body data-page="role-select">
+    <div class="role-landing">
+        <aside class="role-hero">
+            <div class="role-hero-grid"></div>
+            <div class="role-hero-top">
+                <div class="brand-mark"><i class="fa-solid fa-heart-pulse"></i></div>
+                <div>
+                    <strong>XônPanh</strong>
+                    <span>HOSPITAL MANAGEMENT SYSTEM</span>
+                </div>
+                <span class="role-version">Java · Spring Boot</span>
+            </div>
+
+            <div class="role-hero-main">
+                <span class="role-overline"><i class="fa-solid fa-shield-heart"></i> NỀN TẢNG QUẢN LÝ BỆNH VIỆN</span>
+                <h1>Đúng vai trò.<br><em>Đúng quyền hạn.</em></h1>
+                <p>Không gian làm việc trực quan cho từng bộ phận bệnh viện, đồng bộ dữ liệu mẫu trong bộ nhớ.</p>
+                <div class="role-hero-metrics">
+                    <div><strong>05</strong><span>Vai trò làm việc</span></div>
+                    <div><strong>01</strong><span>Hệ thống thống nhất</span></div>
+                    <div><strong>Demo</strong><span>Thymeleaf UI</span></div>
+                </div>
+            </div>
+
+            <div class="role-hero-foot">
+                <span><i class="fa-solid fa-circle-check" style="color: #34d399;"></i> Frontend Demo · Dữ liệu mẫu</span>
+                <span>© 2026 XônPanh HMS</span>
+            </div>
+        </aside>
+
+        <main class="role-selection-panel">
+            <div class="role-selection-top">
+                <span class="environment-label">
+                    <span class="live-dot"></span> CHẾ ĐỘ GIAO DIỆN DEMO — DỮ LIỆU MẪU
+                </span>
+                <span class="role-help">
+                    <i class="fa-regular fa-circle-question"></i> Hệ thống quản lý bệnh viện XônPanh
+                </span>
+            </div>
+
+            <div class="role-intro">
+                <div class="role-intro-icon"><i class="fa-solid fa-hospital-user"></i></div>
+                <span class="role-step">BƯỚC 01 / 01</span>
+                <h2>Chọn không gian làm việc</h2>
+                <p>Mỗi vai trò được tùy biến thanh điều hướng và giao diện phù hợp với nghiệp vụ thực tế.</p>
+            </div>
+
+            <div class="role-grid">
+                <!-- 1. Manager -->
+                <div class="role-card role-tone-blue" th:classappend="${selectedRole == 'manager'} ? ' selected' : ''">
+                    <span class="role-card-top">
+                        <span class="role-card-icon"><i class="fa-solid fa-chart-line"></i></span>
+                        <span class="role-card-check"><i class="fa-solid fa-check"></i></span>
+                    </span>
+                    <strong>Quản lý bệnh viện</strong>
+                    <span class="role-card-desc">Theo dõi hoạt động tổng thể, nhân sự và báo cáo điều hành toàn viện.</span>
+                    <span class="role-feature-list">
+                        <span><i class="fa-solid fa-check"></i>Dashboard & KPI toàn viện</span>
+                        <span><i class="fa-solid fa-check"></i>Báo cáo và thống kê</span>
+                        <span><i class="fa-solid fa-check"></i>Quản trị tất cả phân hệ</span>
+                    </span>
+                    <a th:href="@{/select-role/manager}" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center;">
+                        Vào hệ thống <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- 2. Doctor -->
+                <div class="role-card role-tone-cyan" th:classappend="${selectedRole == 'doctor'} ? ' selected' : ''">
+                    <span class="role-card-top">
+                        <span class="role-card-icon"><i class="fa-solid fa-stethoscope"></i></span>
+                        <span class="role-card-check"><i class="fa-solid fa-check"></i></span>
+                    </span>
+                    <strong>Bác sĩ</strong>
+                    <span class="role-card-desc">Khám bệnh, chẩn đoán ICD, chỉ định xét nghiệm và kê đơn thuốc.</span>
+                    <span class="role-feature-list">
+                        <span><i class="fa-solid fa-check"></i>Hàng đợi khám & kê đơn</span>
+                        <span><i class="fa-solid fa-check"></i>Chẩn đoán & chỉ định</span>
+                        <span><i class="fa-solid fa-check"></i>Kê đơn thuốc điều trị</span>
+                    </span>
+                    <a th:href="@{/select-role/doctor}" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; background: #0891b2;">
+                        Vào hệ thống <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- 3. Nurse -->
+                <div class="role-card role-tone-green" th:classappend="${selectedRole == 'nurse'} ? ' selected' : ''">
+                    <span class="role-card-top">
+                        <span class="role-card-icon"><i class="fa-solid fa-user-nurse"></i></span>
+                        <span class="role-card-check"><i class="fa-solid fa-check"></i></span>
+                    </span>
+                    <strong>Y tá / Điều dưỡng</strong>
+                    <span class="role-card-desc">Hỗ trợ tiếp đón, đăng ký lượt khám, xét nghiệm và tra cứu hồ sơ.</span>
+                    <span class="role-feature-list">
+                        <span><i class="fa-solid fa-check"></i>Tiếp đón & đăng ký khám</span>
+                        <span><i class="fa-solid fa-check"></i>Nhập kết quả xét nghiệm</span>
+                        <span><i class="fa-solid fa-check"></i>Tra cứu hồ sơ nghiệp vụ</span>
+                    </span>
+                    <a th:href="@{/select-role/nurse}" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; background: #059669;">
+                        Vào hệ thống <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- 4. Pharmacist -->
+                <div class="role-card role-tone-violet" th:classappend="${selectedRole == 'pharmacist'} ? ' selected' : ''">
+                    <span class="role-card-top">
+                        <span class="role-card-icon"><i class="fa-solid fa-capsules"></i></span>
+                        <span class="role-card-check"><i class="fa-solid fa-check"></i></span>
+                    </span>
+                    <strong>Dược sĩ</strong>
+                    <span class="role-card-desc">Chỉ làm việc với đơn thuốc, danh mục thuốc, kho lô và cấp phát.</span>
+                    <span class="role-feature-list">
+                        <span><i class="fa-solid fa-check"></i>Đơn thuốc chờ cấp phát</span>
+                        <span><i class="fa-solid fa-check"></i>Thuốc & tồn kho theo lô</span>
+                        <span><i class="fa-solid fa-check"></i>Xác nhận xuất kho FEFO</span>
+                    </span>
+                    <a th:href="@{/select-role/pharmacist}" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; background: #7c3aed;">
+                        Vào hệ thống <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- 5. Cashier -->
+                <div class="role-card role-tone-orange" th:classappend="${selectedRole == 'cashier'} ? ' selected' : ''">
+                    <span class="role-card-top">
+                        <span class="role-card-icon"><i class="fa-solid fa-cash-register"></i></span>
+                        <span class="role-card-check"><i class="fa-solid fa-check"></i></span>
+                    </span>
+                    <strong>Thu ngân</strong>
+                    <span class="role-card-desc">Tiếp đón, đăng ký khám bệnh, xử lý hóa đơn và thu viện phí.</span>
+                    <span class="role-feature-list">
+                        <span><i class="fa-solid fa-check"></i>Tiếp đón & đăng ký khám</span>
+                        <span><i class="fa-solid fa-check"></i>Hóa đơn & thu viện phí</span>
+                        <span><i class="fa-solid fa-check"></i>Đối soát thanh toán</span>
+                    </span>
+                    <a th:href="@{/select-role/cashier}" class="btn btn-primary" style="margin-top: 16px; width: 100%; justify-content: center; background: #ea580c;">
+                        Vào hệ thống <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div style="margin-top: 24px; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 12px; color: #64748b;">
+                    <i class="fa-solid fa-circle-info" style="color: #0284c7; margin-right: 6px;"></i>
+                    Dữ liệu được lưu trên cơ sở dữ liệu Supabase. Nút bên cạnh chỉ đặt lại phiên làm việc (vai trò đang chọn), không xóa dữ liệu:
+                </span>
+                <form th:action="@{/reset-demo}" method="post" style="margin: 0;">
+                    <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Đặt lại phiên làm việc? (Dữ liệu trong CSDL không bị xóa)')">
+                        <i class="fa-solid fa-rotate-left"></i> Đặt lại phiên làm việc
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+

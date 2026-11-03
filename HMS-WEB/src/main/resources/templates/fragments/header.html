@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header" class="topbar">
+    <button type="button" class="icon-button" id="sidebar-toggle" style="display: none;" title="Mở danh mục">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="breadcrumb">
+        <i class="fa-solid fa-hospital-user"></i>
+        <span>Hệ thống</span>
+        <i class="fa-solid fa-chevron-right"></i>
+        <strong th:text="${pageTitle != null ? pageTitle : currentRole.label}">Bàn làm việc</strong>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <!-- Quick Role Switcher Pill -->
+    <div class="role-switcher-badge" style="display: flex; align-items: center; gap: 8px; background: #f0f9ff; border: 1px solid #bae6fd; padding: 4px 12px; border-radius: 9999px;">
+        <span class="pill" style="background: #0284c7; color: white; padding: 2px 8px; font-size: 11px; font-weight: 700;" th:text="${currentRole.shortLabel}">Vai trò</span>
+        <a th:href="@{/}" style="font-size: 11px; color: #0369a1; font-weight: 600;" title="Nhấn để đổi sang vai trò khác">
+            Đổi vai trò <i class="fa-solid fa-chevron-right" style="font-size: 9px;"></i>
+        </a>
+    </div>
+
+    <div class="topbar-divider"></div>
+
+    <!-- Staff Switcher with Dropdown for Same Role -->
+    <div class="staff-switcher" style="position: relative;">
+        <button type="button" id="btn-toggle-staff-menu" style="display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 4px 6px; border-radius: 8px;">
+            <div class="avatar" th:text="${currentStaff != null ? currentStaff.initials : (currentRole.employeeName != null ? currentRole.employeeName.substring(0, 2).toUpperCase() : 'NV')}">
+                NV
+            </div>
+            <div class="staff-meta" style="text-align: left;">
+                <strong th:text="${currentStaff != null ? currentStaff.hoTen : currentRole.employeeName}">Nguyễn Hoàng An</strong>
+                <span th:text="${(currentStaff != null ? currentStaff.vaiTro : currentRole.label) + ' (' + (currentStaff != null ? currentStaff.idNv : currentRole.employeeId) + ')'}">Bác sĩ (NV001)</span>
+            </div>
+            <i class="fa-solid fa-chevron-down" style="font-size: 11px; color: #64748b; margin-left: 4px;"></i>
+        </button>
+
+        <!-- Dropdown menu to switch staff in the same role -->
+        <div id="staff-dropdown-menu" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 280px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1050; padding: 8px 0;">
+            <div style="padding: 8px 16px; border-bottom: 1px solid #f1f5f9; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
+                Đổi nhân sự (<span th:text="${currentRole.shortLabel}">Bác sĩ</span>)
+            </div>
+            <div style="max-height: 240px; overflow-y: auto;">
+                <a th:each="st : ${sameRoleStaffList}" th:href="@{'/switch-staff/' + ${st.idNv}}"
+                   style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; text-decoration: none; color: #1e293b; border-bottom: 1px solid #f8fafc;"
+                   th:styleappend="${currentStaff != null and currentStaff.idNv == st.idNv ? 'background: #f0f9ff; font-weight: 600;' : ''}">
+                    <span class="person-avatar" style="width: 32px; height: 32px; font-size: 12px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center;" th:text="${st.initials}">NV</span>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" th:text="${st.hoTen}">BS. Nguyễn Hoàng An</div>
+                        <div style="font-size: 11px; color: #64748b;" th:text="${st.idNv + (st.specialtyDetail != null and !st.specialtyDetail.isEmpty() ? ' · ' + st.specialtyDetail : '')}">NV001 · Nội tổng hợp</div>
+                    </div>
+                    <i th:if="${currentStaff != null and currentStaff.idNv == st.idNv}" class="fa-solid fa-check" style="color: #0284c7; font-size: 13px;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+</body>
+</html>

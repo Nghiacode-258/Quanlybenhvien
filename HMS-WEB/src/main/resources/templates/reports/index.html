@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Báo cáo thống kê')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-chart-column"></i> THỐNG KÊ & BÁO CÁO</div>
+                    <h1>Báo cáo thống kê vận hành</h1>
+                    <p>Tổng hợp chỉ số vận hành bệnh viện, phân bổ nhân sự và xuất dữ liệu danh sách khám chữa bệnh.</p>
+                </div>
+                <div class="heading-actions">
+                    <a th:href="@{/reports/export-csv}" class="btn btn-primary">
+                        <i class="fa-solid fa-file-csv"></i> Xuất dữ liệu CSV
+                    </a>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="stat-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tổng hồ sơ bệnh nhân</span>
+                        <span class="stat-icon tone-blue"><i class="fa-solid fa-users"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${totalPatients}">6</div>
+                    <div class="stat-sub">Đang lưu trữ trong hệ thống</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tổng lượt khám</span>
+                        <span class="stat-icon tone-orange"><i class="fa-solid fa-stethoscope"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${totalExams}">5</div>
+                    <div class="stat-sub">Các lượt tiếp nhận khám bệnh</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Doanh thu đã thu</span>
+                        <span class="stat-icon tone-green"><i class="fa-solid fa-wallet"></i></span>
+                    </div>
+                    <div class="stat-value" style="font-size: 22px;" th:text="${#numbers.formatDecimal(totalPaid, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</div>
+                    <div class="stat-sub"><a th:href="@{/billing}" style="color: #0284c7; text-decoration: underline; font-weight: 600;">Xem biểu đồ tương tác &rarr;</a></div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Công nợ chưa thu</span>
+                        <span class="stat-icon tone-violet"><i class="fa-solid fa-hourglass"></i></span>
+                    </div>
+                    <div class="stat-value" style="font-size: 22px;" th:text="${#numbers.formatDecimal(totalDue, 0, 'POINT', 0, 'POINT') + ' đ'}">438.000 đ</div>
+                    <div class="stat-sub">Hóa đơn đang chờ thanh toán</div>
+                </div>
+            </div>
+
+            <!-- Visual stats -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-chart-simple"></i> Phân bổ nhân sự theo vai trò</div>
+                            <div class="section-card-subtitle">Cơ cấu đội ngũ nhân viên bệnh viện</div>
+                        </div>
+                    </div>
+                    <div class="section-card-body">
+                        <div class="bar-list" style="display: grid; gap: 14px;">
+                            <div th:each="s : ${staffStats}">
+                                <div class="bar-item-header" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span th:text="${s.label}">Bác sĩ chuyên khoa</span>
+                                    <strong th:text="${s.count + ' nhân sự'}">2 nhân sự</strong>
+                                </div>
+                                <div style="height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                                    <div th:style="'width: ' + ${s.percent} + '%; height: 100%; background: ' + ${s.color} + ';'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-download"></i> Xuất dữ liệu báo cáo</div>
+                            <div class="section-card-subtitle">Tải dữ liệu phiếu khám định dạng file CSV để mở bằng Excel</div>
+                        </div>
+                    </div>
+                    <div class="section-card-body" style="padding: 24px; text-align: center;">
+                        <i class="fa-solid fa-file-csv" style="font-size: 54px; color: #0284c7; margin-bottom: 16px;"></i>
+                        <h3 style="font-size: 16px; font-weight: 700; color: #1e293b; margin: 0 0 8px 0;">Báo cáo danh sách lượt khám chữa bệnh</h3>
+                        <p style="font-size: 13px; color: #64748b; max-width: 420px; margin: 0 auto 20px auto;">
+                            Dữ liệu bao gồm mã phiếu, tên người bệnh, phòng khám, bác sĩ phụ trách, ngày đăng ký, triệu chứng và trạng thái hiện tại.
+                        </p>
+                        <a th:href="@{/reports/export-csv}" class="btn btn-primary" style="display: inline-flex;">
+                            <i class="fa-solid fa-download"></i> Tải xuống file CSV (.csv)
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
+

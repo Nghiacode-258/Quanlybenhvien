@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${'Hóa đơn ' + invoice.idHoadon + ' | XônPanh HMS'}">In hóa đơn viện phí</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; color: #1e293b; background: #f8fafc; margin: 0; padding: 20px; }
+        .invoice-box {
+            max-width: 680px; margin: auto; padding: 34px; border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        @media print {
+            body { background: #fff; padding: 0; }
+            .invoice-box { border: none; box-shadow: none; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="no-print" style="max-width: 680px; margin: 0 auto 16px auto; display: flex; justify-content: space-between; align-items: center;">
+    <a href="javascript:window.close()" style="text-decoration: none; color: #64748b; font-size: 13px;"><i class="fa-solid fa-arrow-left"></i> Đóng cửa sổ</a>
+    <button onclick="window.print()" style="background: #0284c7; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: 600; cursor: pointer;">
+        <i class="fa-solid fa-print"></i> In phiếu thu
+    </button>
+</div>
+
+<div class="invoice-box">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 14px; margin-bottom: 20px;">
+        <div>
+            <h2 style="margin: 0; font-size: 18px; text-transform: uppercase; color: #0369a1; font-weight: 800;">BỆNH VIỆN ĐA KHOA XÔNPANH</h2>
+            <div style="font-size: 12px; color: #64748b;">Cơ sở Trung tâm · Cầu Giấy, Hà Nội</div>
+            <div style="font-size: 12px; color: #64748b;">Hotline: 1900 6868 · www.xonpanh.vn</div>
+        </div>
+        <div style="text-align: right;">
+            <h3 style="margin: 0; font-size: 16px; color: #0284c7;">PHIẾU THU VIỆN PHÍ</h3>
+            <div style="font-size: 12px; font-weight: 700; color: #334155;" th:text="${'Mã HĐ: ' + invoice.idHoadon}">Mã: HD001</div>
+            <div style="font-size: 11px; color: #64748b;" th:text="${'Ngày: ' + (invoice.thoiGianThu != null and !invoice.thoiGianThu.isEmpty() ? invoice.thoiGianThu : todayDate)}">Ngày: 2026-10-28</div>
+        </div>
+    </div>
+
+    <!-- Patient Details -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 6px;">
+        <div>Họ và tên: <strong th:text="${invoice.patientName}">Nguyễn Minh Anh</strong></div>
+        <div>Mã bệnh nhân: <strong th:text="${invoice.idBn}">BN001</strong></div>
+        <div>Mã phiếu khám: <span th:text="${invoice.idPhieukham}">PKM001</span></div>
+        <div>Trạng thái: <strong style="color: #059669;" th:text="${invoice.trangThai}">Đã thanh toán</strong></div>
+    </div>
+
+    <!-- Details Table -->
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px;">
+        <thead>
+        <tr style="background: #f1f5f9; text-align: left; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+            <th style="padding: 8px;">STT</th>
+            <th style="padding: 8px;">Nội dung thu</th>
+            <th style="padding: 8px; text-align: center;">Phương thức</th>
+            <th style="padding: 8px; text-align: right;">Số tiền</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr style="border-bottom: 1px solid #e2e8f0;">
+            <td style="padding: 10px 8px;">1</td>
+            <td style="padding: 10px 8px;">
+                <strong th:text="${invoice.loaiThu}">Khám lâm sàng + xét nghiệm + thuốc</strong>
+                <div style="font-size: 11px; color: #64748b;" th:text="${'Theo phiếu khám ' + invoice.idPhieukham}">Theo phiếu khám PKM001</div>
+            </td>
+            <td style="padding: 10px 8px; text-align: center;" th:text="${invoice.phuongThucTt != null and !invoice.phuongThucTt.isEmpty() ? invoice.phuongThucTt : 'Tiền mặt'}">Chuyển khoản</td>
+            <td style="padding: 10px 8px; text-align: right; font-weight: 700;" th:text="${#numbers.formatDecimal(invoice.soTien, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr style="border-top: 2px solid #0284c7; font-size: 15px;">
+            <td colspan="3" style="padding: 12px 8px; text-align: right; font-weight: 700;">TỔNG CỘNG THANH TOÁN:</td>
+            <td style="padding: 12px 8px; text-align: right; font-weight: 800; color: #0284c7;" th:text="${#numbers.formatDecimal(invoice.soTien, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</td>
+        </tr>
+        </tfoot>
+    </table>
+
+    <!-- Signature -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 13px; margin-top: 40px; padding-top: 20px;">
+        <div>
+            <strong>Người nộp tiền</strong>
+            <div style="font-size: 11px; color: #64748b;">(Ký và ghi rõ họ tên)</div>
+            <div style="height: 60px;"></div>
+            <span th:text="${invoice.patientName}">Nguyễn Minh Anh</span>
+        </div>
+        <div>
+            <strong>Người lập phiếu thu</strong>
+            <div style="font-size: 11px; color: #64748b;">(Ký và đóng dấu)</div>
+            <div style="height: 60px;"></div>
+            <span>Nguyễn Hải Yến (Thu ngân)</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

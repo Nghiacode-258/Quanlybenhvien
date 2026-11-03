@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Tổng quan & KPI')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-chart-line"></i> BÁO CÁO ĐIỀU HÀNH</div>
+                    <h1>Tổng quan bệnh viện</h1>
+                    <p>Theo dõi tình hình tiếp đón, hàng đợi khám bệnh, tồn kho dược phẩm và doanh thu viện phí.</p>
+                </div>
+                <div class="heading-actions">
+                    <span class="pill" style="background: #e0f2fe; color: #0369a1; font-weight: 600;">
+                        <i class="fa-solid fa-calendar-day"></i> Hôm nay: <span th:text="${todayDate}">2026-10-28</span>
+                    </span>
+                    <form th:action="@{/reset-demo}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Đặt lại phiên làm việc? (Dữ liệu trong CSDL không bị xóa)')">
+                            <i class="fa-solid fa-rotate-left"></i> Đặt lại phiên
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4 Top KPI Cards -->
+            <div class="stat-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Bệnh nhân hôm nay</span>
+                        <span class="stat-icon tone-blue"><i class="fa-solid fa-hospital-user"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${todayPatientsCount}">6</div>
+                    <div class="stat-sub">Tổng hồ sơ: <strong th:text="${totalPatients}">6</strong> bệnh nhân</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Phiếu khám đang chờ</span>
+                        <span class="stat-icon tone-orange"><i class="fa-solid fa-clock"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${pendingExams}">3</div>
+                    <div class="stat-sub">Tổng số phiếu: <strong th:text="${totalExams}">5</strong> lượt khám</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Doanh thu đã thu</span>
+                        <span class="stat-icon tone-green"><i class="fa-solid fa-circle-check"></i></span>
+                    </div>
+                    <div class="stat-value" style="font-size: 22px;" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'POINT', 0, 'POINT') + ' đ'}">353.000 đ</div>
+                    <div class="stat-sub">Theo hóa đơn đã thanh toán</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-top">
+                        <span class="stat-label">Tồn kho dược phẩm</span>
+                        <span class="stat-icon tone-violet"><i class="fa-solid fa-boxes-stacked"></i></span>
+                    </div>
+                    <div class="stat-value" th:text="${totalStock}">789</div>
+                    <div class="stat-sub">Tổng viên/gói còn trong kho</div>
+                </div>
+            </div>
+
+            <!-- Charts Section (CSS Bar Visualizer) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-chart-column"></i> Lượt khám 7 ngày gần nhất</div>
+                            <div class="section-card-subtitle">Thống kê số lượng lượt tiếp nhận bệnh nhân khám</div>
+                        </div>
+                    </div>
+                    <div class="section-card-body">
+                        <div style="display: flex; align-items: flex-end; justify-content: space-between; height: 160px; padding: 10px 20px; border-bottom: 1px solid #e2e8f0; gap: 12px;">
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 60px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T2</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 95px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T3</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 110px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T4</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 75px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T5</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 130px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T6</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 85px; background: #bae6fd; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; color: #64748b;">T7</span>
+                            </div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="height: 140px; background: #0284c7; border-radius: 6px 6px 0 0; margin-bottom: 6px;"></div>
+                                <span style="font-size: 11px; font-weight: 700; color: #0284c7;">H.Nay</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-wallet"></i> Doanh thu viện phí theo phân mục</div>
+                            <div class="section-card-subtitle">Cơ cấu thu: Khám lâm sàng, Xét nghiệm & Thuốc</div>
+                        </div>
+                    </div>
+                    <div class="section-card-body">
+                        <div class="bar-list" style="display: grid; gap: 14px;">
+                            <div>
+                                <div class="bar-item-header" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>Khám lâm sàng</span><strong>150.000 đ</strong>
+                                </div>
+                                <div style="height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                                    <div style="width: 45%; height: 100%; background: #0284c7;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="bar-item-header" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>Xét nghiệm cận lâm sàng</span><strong>180.000 đ</strong>
+                                </div>
+                                <div style="height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                                    <div style="width: 50%; height: 100%; background: #059669;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="bar-item-header" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span>Thuốc theo đơn</span><strong>23.000 đ</strong>
+                                </div>
+                                <div style="height: 8px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                                    <div style="width: 25%; height: 100%; background: #7c3aed;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Two tables: Recent Exams and Expiring Medicine Lots -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+                <!-- Recent Exams -->
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-stethoscope"></i> Phiếu khám gần nhất</div>
+                            <div class="section-card-subtitle">Các lượt khám được tạo gần đây</div>
+                        </div>
+                        <a th:href="@{/registration}" class="btn btn-secondary btn-sm">Xem tất cả</a>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ PHIẾU</th>
+                                <th>BỆNH NHÂN</th>
+                                <th>PHÒNG KHÁM</th>
+                                <th>TRẠNG THÁI</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ex : ${recentExams}">
+                                <td><span class="id-code" th:text="${ex.idPhieukham}">PKM001</span></td>
+                                <td th:text="${ex.patientName}">Nguyễn Minh Anh</td>
+                                <td th:text="${ex.roomName}">Phòng khám Nội</td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${ex.trangThai == 'Hoàn tất' ? 'pill-success' : (ex.trangThai == 'Chờ khám' ? 'pill-primary' : 'pill-warning')}"
+                                          th:text="${ex.trangThai}">Chờ khám</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(recentExams)}">
+                                <td colspan="4" class="empty-state">Chưa có lượt khám nào.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Expiring Lots -->
+                <section class="section-card">
+                    <div class="section-card-header">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-triangle-exclamation" style="color: #ea580c;"></i> Thuốc sắp hết hạn / Tồn kho thấp</div>
+                            <div class="section-card-subtitle">Cần lưu ý bổ sung hoặc luân chuyển</div>
+                        </div>
+                        <a th:href="@{/pharmacy}" class="btn btn-secondary btn-sm">Quản lý kho</a>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>SỐ LÔ</th>
+                                <th>THUỐC</th>
+                                <th>HẠN DÙNG</th>
+                                <th>TỒN KHO</th>
+                                <th>CẢNH BÁO</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="lot : ${expiringLots}">
+                                <td><span class="id-code" th:text="${lot.soLo}">ORS-2607</span></td>
+                                <td th:text="${lot.tenThuoc}">Oresol</td>
+                                <td th:text="${lot.hanSuDung}">2026-11-20</td>
+                                <td><strong th:text="${lot.soLuongTon + ' ' + (lot.donVi != null ? lot.donVi : '')}">24 gói</strong></td>
+                                <td>
+                                    <span class="pill" th:classappend="${lot.expiryBadgeClass}" th:text="${lot.expiryStatusText}">Sắp hết hạn</span>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(expiringLots)}">
+                                <td colspan="5" class="empty-state">Kho thuốc ổn định, không có lô hết hạn.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
+

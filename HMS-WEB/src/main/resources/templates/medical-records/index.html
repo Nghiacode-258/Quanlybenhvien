@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Hồ sơ bệnh án')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-folder-medical"></i> HỒ SƠ Y KHOA</div>
+                    <h1>Hồ sơ bệnh án & Tiền sử khám</h1>
+                    <p>Tra cứu chi tiết quá trình khám chữa bệnh, chẩn đoán, tiền sử dị ứng và thẻ BHYT của người bệnh.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Patient Selector Column -->
+                <div class="lg:col-span-1">
+                    <section class="section-card">
+                        <div class="section-card-header">
+                            <div>
+                                <div class="section-card-title"><i class="fa-solid fa-users"></i> Danh sách bệnh nhân</div>
+                                <div class="section-card-subtitle">Chọn người bệnh để xem hồ sơ</div>
+                            </div>
+                        </div>
+                        <div class="section-card-body" style="padding: 12px;">
+                            <form th:action="@{/medical-records}" method="get" style="margin-bottom: 12px;">
+                                <label class="search-control">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <input type="search" name="search" th:value="${search}" placeholder="Tìm họ tên, CCCD, mã BN...">
+                                </label>
+                            </form>
+
+                            <div style="display: grid; gap: 8px; max-height: 600px; overflow-y: auto;">
+                                <a th:each="p : ${patients}"
+                                   th:href="@{/medical-records(selectedId=${p.idBn}, search=${search})}"
+                                   style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid #e2e8f0; text-decoration: none;"
+                                   th:styleappend="${selectedPatient != null and selectedPatient.idBn == p.idBn} ? 'background: #e0f2fe; border-color: #38bdf8;' : 'background: #fff;'">
+                                    <span class="person-avatar" th:text="${p.initials}">NA</span>
+                                    <div style="min-width: 0; flex: 1;">
+                                        <div style="font-weight: 700; color: #1e293b; font-size: 13px;" th:text="${p.hoTen}">Nguyễn Minh Anh</div>
+                                        <div style="font-size: 11px; color: #64748b;" th:text="${p.idBn + ' · ' + p.phoneDisplay}">BN001 · 0901234567</div>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right" style="font-size: 10px; color: #94a3b8;"></i>
+                                </a>
+                                <div th:if="${#lists.isEmpty(patients)}" class="empty-state">Không có bệnh nhân phù hợp.</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Record Details Column -->
+                <div class="lg:col-span-2" style="min-width: 0;">
+                    <section th:if="${selectedPatient != null}" class="section-card" style="min-width: 0;">
+                        <div class="section-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="section-card-title" th:text="${'Hồ sơ: ' + selectedPatient.hoTen + ' (' + selectedPatient.idBn + ')'}">Hồ sơ bệnh nhân</div>
+                                <div class="section-card-subtitle" th:text="${'Ngày mở hồ sơ: ' + selectedPatient.ngayTao}">Ngày mở: 2026-10-28</div>
+                            </div>
+                            <span class="pill pill-success" th:text="${selectedPatient.trangThai}">Ổn định</span>
+                        </div>
+                        <div class="section-card-body">
+                            <!-- Info grid -->
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span>Ngày sinh</span>
+                                    <strong th:text="${selectedPatient.ngaySinh != null ? selectedPatient.ngaySinh : '—'}">1998-03-14</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span>Giới tính</span>
+                                    <strong th:text="${selectedPatient.gioiTinh}">Nữ</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span>Số CCCD</span>
+                                    <strong th:text="${selectedPatient.cccd != null and !selectedPatient.cccd.isEmpty() ? selectedPatient.cccd : '—'}">001206012345</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span>Số điện thoại</span>
+                                    <strong th:text="${selectedPatient.phoneDisplay}">0901234567</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span>Thẻ BHYT</span>
+                                    <strong th:text="${selectedPatient.insurance != null ? selectedPatient.insurance.soBhyt + ' (Hưởng ' + selectedPatient.insurance.mucHuong + '%)' : 'Chưa có'}">HN401... (80%)</strong>
+                                </div>
+                                <div class="info-item">
+                                    <span>Người nhà</span>
+                                    <strong th:text="${selectedPatient.relative != null ? selectedPatient.relative.hoTen + ' (' + selectedPatient.relative.moiQuanHe + ')' : 'Chưa khai báo'}">Bố (090...)</strong>
+                                </div>
+                            </div>
+
+                            <div class="soft-divider"></div>
+
+                            <!-- Medical Records History -->
+                            <h3 class="subheading" style="margin-top: 16px;"><i class="fa-solid fa-notes-medical"></i> Bệnh án & Tiền sử bệnh</h3>
+                            <div class="table-wrap" style="overflow-x: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch;">
+                                <table class="data-table">
+                                    <thead>
+                                    <tr>
+                                        <th>MÃ BỆNH ÁN</th>
+                                        <th>NGÀY TẠO</th>
+                                        <th>TIỀN SỬ BỆNH</th>
+                                        <th>TRẠNG THÁI</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="r : ${records}">
+                                        <td><span class="id-code" th:text="${r.idBenhan}">BA001</span></td>
+                                        <td th:text="${r.ngayTao}">2026-08-20</td>
+                                        <td th:text="${r.tienSuBenh}">Viêm mũi dị ứng theo mùa</td>
+                                        <td><span class="pill pill-primary" th:text="${r.trangThai}">Đang theo dõi</span></td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(records)}">
+                                        <td colspan="4" class="empty-state">Chưa ghi nhận tiền sử bệnh án.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="soft-divider"></div>
+
+                            <!-- Past Consultations -->
+                            <h3 class="subheading" style="margin-top: 16px;"><i class="fa-solid fa-stethoscope"></i> Lịch sử các lần khám bệnh</h3>
+                            <div class="table-wrap" style="overflow-x: auto; width: 100%; max-width: 100%; -webkit-overflow-scrolling: touch; margin-bottom: 4px;">
+                                <table class="data-table" style="width: 100%; min-width: 860px; table-layout: auto;">
+                                    <thead>
+                                    <tr>
+                                        <th style="width: 85px; min-width: 85px;">MÃ PHIẾU</th>
+                                        <th style="width: 115px; min-width: 115px;">NGÀY & GIỜ KHÁM</th>
+                                        <th style="min-width: 130px;">PHÒNG KHÁM</th>
+                                        <th style="min-width: 125px;">BÁC SĨ</th>
+                                        <th style="min-width: 140px; max-width: 180px;">LÝ DO / TRIỆU CHỨNG</th>
+                                        <th style="min-width: 130px;">CHẨN ĐOÁN</th>
+                                        <th style="width: 95px; min-width: 95px; text-align: center;">TRẠNG THÁI</th>
+                                        <th style="width: 125px; min-width: 125px; text-align: center;">THAO TÁC</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="ex : ${exams}">
+                                        <td><span class="id-code" th:text="${ex.idPhieukham}">PKM001</span></td>
+                                        <td>
+                                            <strong th:text="${ex.ngayDky}">2026-10-28</strong>
+                                            <div class="small-muted" th:text="${ex.thoiGianKham != null and !ex.thoiGianKham.isEmpty() ? ex.thoiGianKham : '08:30'}">08:30</div>
+                                        </td>
+                                        <td th:text="${ex.roomName}">Phòng khám Nội</td>
+                                        <td th:text="${ex.doctorName}">BS. Nguyễn Hoàng An</td>
+                                        <td style="max-width: 180px; white-space: normal;">
+                                            <span class="small-muted" th:text="${ex.trieuChung != null and !ex.trieuChung.isEmpty() ? ex.trieuChung : '—'}">Đau đầu, sốt</span>
+                                        </td>
+                                        <td>
+                                            <div th:if="${ex.icdCode != null}">
+                                                <strong th:text="${ex.icdCode}">J06.9</strong>
+                                                <div class="small-muted" th:text="${ex.diagnosisName}">Viêm họng cấp</div>
+                                            </div>
+                                            <span th:unless="${ex.icdCode != null}" class="small-muted">—</span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="pill"
+                                                  th:classappend="${ex.trangThai == 'Hoàn tất' or ex.trangThai == 'Đã khám'} ? 'pill-success' : (ex.trangThai == 'Chờ khám' ? 'pill-warning' : 'pill-primary')"
+                                                  th:text="${ex.trangThai}">Đã khám</span>
+                                        </td>
+                                        <td style="text-align: center; white-space: nowrap; width: 125px; min-width: 125px;">
+                                            <button type="button" class="btn btn-secondary btn-sm"
+                                                    th:attr="data-open-modal='modal-exam-' + ${ex.idPhieukham}"
+                                                    style="white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                                                <i class="fa-solid fa-eye" style="color: #0284c7;"></i> Xem chi tiết
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${#lists.isEmpty(exams)}">
+                                        <td colspan="8" class="empty-state">Chưa có lịch sử khám bệnh.</td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Modal Chi tiết phiếu khám (Đặt ngoài table để tối ưu hiển thị và không ảnh hưởng layout table) -->
+                            <div th:each="ex : ${exams}">
+                                <div th:id="'modal-exam-' + ${ex.idPhieukham}" class="modal-overlay" style="text-align: left;">
+                                    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 860px); max-height: 90vh; display: flex; flex-direction: column; padding: 0; box-shadow: 0 25px 60px rgba(0,0,0,0.3); overflow: hidden;">
+                                        <!-- Modal Header -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                            <div>
+                                                <div style="display: flex; align-items: center; gap: 8px;">
+                                                    <span class="id-code" style="font-size: 14px;" th:text="${ex.idPhieukham}">PKM001</span>
+                                                    <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Chi tiết phiếu khám bệnh</h3>
+                                                    <span class="pill" th:classappend="${ex.trangThai == 'Hoàn tất' or ex.trangThai == 'Đã khám'} ? 'pill-success' : (ex.trangThai == 'Chờ khám' ? 'pill-warning' : 'pill-primary')" th:text="${ex.trangThai}">Đã khám</span>
+                                                </div>
+                                                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;" th:text="${'Bệnh nhân: ' + selectedPatient.hoTen + ' (' + selectedPatient.idBn + ') · Ngày khám: ' + ex.ngayDky + ' ' + (ex.thoiGianKham != null ? ex.thoiGianKham : '08:30')}">Thông tin phiếu khám</p>
+                                            </div>
+                                            <button type="button" data-close-modal style="background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px 8px;">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Modal Body (Cuộn mượt mà nếu nội dung dài) -->
+                                        <div style="padding: 20px 24px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 20px;">
+                                            <!-- A. Thông tin hành chính lượt khám -->
+                                            <div>
+                                                <h4 style="font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-hospital-user"></i> A. Thông tin hành chính lượt khám
+                                                </h4>
+                                                <div class="info-grid" style="background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                                    <div class="info-item">
+                                                        <span>Mã phiếu khám</span>
+                                                        <strong class="id-code" th:text="${ex.idPhieukham}">PKM001</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Ngày giờ khám</span>
+                                                        <strong th:text="${ex.ngayDky + ' ' + (ex.thoiGianKham != null and !ex.thoiGianKham.isEmpty() ? ex.thoiGianKham : '08:30')}">2026-10-28 08:30</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Phòng khám</span>
+                                                        <strong th:text="${ex.roomName}">Phòng khám Nội</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Bác sĩ phụ trách</span>
+                                                        <strong th:text="${ex.doctorName}">BS. Nguyễn Hoàng An</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Trạng thái lượt khám</span>
+                                                        <strong th:text="${ex.trangThai}">Đã khám</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Chi phí khám bệnh</span>
+                                                        <strong style="color: #0369a1;" th:text="${ex.phiKham != null ? (#numbers.formatDecimal(ex.phiKham, 0, 'POINT', 0, 'POINT') + ' đ') : '150.000 đ'}">150.000 đ</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- B. Thông tin bệnh nhân tại thời điểm khám -->
+                                            <div>
+                                                <h4 style="font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-id-card"></i> B. Thông tin bệnh nhân tại thời điểm khám
+                                                </h4>
+                                                <div class="info-grid" style="background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                                    <div class="info-item">
+                                                        <span>Mã người bệnh</span>
+                                                        <strong class="id-code" th:text="${selectedPatient.idBn}">BN001</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Họ và tên</span>
+                                                        <strong th:text="${selectedPatient.hoTen}">Nguyễn Minh Anh</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Ngày sinh / Tuổi</span>
+                                                        <strong th:if="${selectedPatient.ngaySinh != null}" th:text="${selectedPatient.tuoi != null ? (selectedPatient.ngaySinh + ' (' + selectedPatient.tuoi + ' tuổi)') : selectedPatient.ngaySinh}">1998-03-14</strong>
+                                                        <strong th:unless="${selectedPatient.ngaySinh != null}">—</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Giới tính</span>
+                                                        <strong th:text="${selectedPatient.gioiTinh}">Nữ</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Số CCCD</span>
+                                                        <strong th:text="${selectedPatient.cccd != null and !selectedPatient.cccd.isEmpty() ? selectedPatient.cccd : '—'}">001206012345</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Số điện thoại</span>
+                                                        <strong th:text="${selectedPatient.phoneDisplay}">0901234567</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Thẻ BHYT & Mức hưởng</span>
+                                                        <strong th:text="${selectedPatient.insurance != null ? (selectedPatient.insurance.soBhyt + ' (Hưởng ' + selectedPatient.insurance.mucHuong + '%)') : 'Không có thẻ BHYT'}">HN401... (80%)</strong>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span>Người thân / Liên hệ</span>
+                                                        <strong th:text="${selectedPatient.relative != null ? (selectedPatient.relative.hoTen + ' (' + selectedPatient.relative.moiQuanHe + ' · ' + selectedPatient.relative.sdt + ')') : 'Chưa khai báo'}">Bố (090...)</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- C. Kết quả khám lâm sàng & cận lâm sàng -->
+                                            <div>
+                                                <h4 style="font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-stethoscope"></i> C. Kết quả khám lâm sàng & Cận lâm sàng
+                                                </h4>
+                                                <div style="background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 12px;">
+                                                    <div style="margin-bottom: 8px;">
+                                                        <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Lý do khám / Triệu chứng ban đầu:</span>
+                                                        <div style="font-weight: 600; color: #1e293b; margin-top: 2px;" th:text="${ex.trieuChung != null and !ex.trieuChung.isEmpty() ? ex.trieuChung : 'Không ghi nhận triệu chứng bất thường'}">Đau rát họng, ho nhẹ, sốt 38.2 độ C</div>
+                                                    </div>
+                                                    <div style="margin-bottom: 8px;">
+                                                        <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Chẩn đoán của bác sĩ & Mã bệnh ICD-10:</span>
+                                                        <div style="font-weight: 700; color: #0369a1; margin-top: 2px;">
+                                                            <span th:if="${ex.icdCode != null}" th:text="${ex.icdCode + ' — ' + ex.diagnosisName}">J06.9 — Viêm họng cấp</span>
+                                                            <span th:unless="${ex.icdCode != null}" class="small-muted">Chưa cập nhật mã chẩn đoán ICD</span>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Kết luận chuyên môn:</span>
+                                                        <div style="font-size: 13px; color: #334155; margin-top: 2px;" th:text="${ex.ketLuan != null and !ex.ketLuan.isEmpty() ? ex.ketLuan : 'Theo dõi điều trị ngoại trú, giữ ấm cơ thể và dùng thuốc đúng chỉ định.'}">Theo dõi điều trị ngoại trú</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Chỉ định xét nghiệm -->
+                                                <div style="margin-top: 10px;">
+                                                    <div style="font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;"><i class="fa-solid fa-flask"></i> Chỉ định xét nghiệm đính kèm:</div>
+                                                    <div th:if="${ex.labResults != null and !#lists.isEmpty(ex.labResults)}" class="table-wrap">
+                                                        <table class="data-table" style="font-size: 12px;">
+                                                            <thead>
+                                                            <tr>
+                                                                <th>MÃ XN</th>
+                                                                <th>TÊN LOẠI XÉT NGHIỆM</th>
+                                                                <th>THỜI GIAN</th>
+                                                                <th>KẾT QUẢ XÉT NGHIỆM</th>
+                                                                <th>KẾT LUẬN CẬN LÂM SÀNG</th>
+                                                                <th>TRẠNG THÁI</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            <tr th:each="lr : ${ex.labResults}">
+                                                                <td><span class="id-code" th:text="${lr.idKqxn}">KQ001</span></td>
+                                                                <td><strong th:text="${lr.tenLxn}">Tổng phân tích tế bào máu</strong></td>
+                                                                <td th:text="${lr.thoiGian != null ? lr.thoiGian : ex.ngayDky}">2026-10-28</td>
+                                                                <td>
+                                                                    <span style="font-weight: 600; color: #0f172a;" th:text="${lr.ketQua != null and !lr.ketQua.isEmpty() ? lr.ketQua : 'Đang chờ kết quả...'}">Bình thường</span>
+                                                                </td>
+                                                                <td th:text="${lr.ketLuan != null and !lr.ketLuan.isEmpty() ? lr.ketLuan : '—'}">Chưa có kết luận</td>
+                                                                <td>
+                                                                    <span class="pill" th:classappend="${lr.trangThai == 'Hoàn thành' ? 'pill-success' : 'pill-warning'}" th:text="${lr.trangThai}">Hoàn thành</span>
+                                                                </td>
+                                                            </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div th:if="${ex.labResults == null or #lists.isEmpty(ex.labResults)}" class="empty-state" style="padding: 12px; font-size: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                                                        <i class="fa-solid fa-circle-info" style="color: #94a3b8; margin-right: 6px;"></i> Chưa có chỉ định xét nghiệm cho lần khám này.
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- D. Đơn thuốc đính kèm lượt khám -->
+                                            <div>
+                                                <h4 style="font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-pills"></i> D. Đơn thuốc đính kèm lượt khám
+                                                </h4>
+                                                <div th:if="${ex.prescription != null}">
+                                                    <div style="background: #f8fafc; padding: 12px 14px; border-radius: 12px 12px 0 0; border: 1px solid #e2e8f0; border-bottom: none; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                                                        <div style="display: flex; gap: 12px; align-items: center; font-size: 13px;">
+                                                            <span>Mã đơn: <strong class="id-code" th:text="${ex.prescription.idDt}">DT001</strong></span>
+                                                            <span>Ngày kê: <strong th:text="${ex.prescription.ngayKe}">2026-10-28</strong></span>
+                                                            <span>Bác sĩ kê: <strong th:text="${ex.prescription.doctorName}">BS. Nguyễn Hoàng An</strong></span>
+                                                        </div>
+                                                        <div>
+                                                            <span class="pill" th:classappend="${ex.prescription.trangThai == 'Đã cấp phát' ? 'pill-success' : 'pill-warning'}" th:text="${ex.prescription.trangThai}">Đã cấp phát</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div th:if="${ex.prescription.items != null and !#lists.isEmpty(ex.prescription.items)}" class="table-wrap" style="border-radius: 0 0 12px 12px; border-top: none;">
+                                                        <table class="data-table" style="font-size: 12px;">
+                                                            <thead>
+                                                            <tr>
+                                                                <th>STT</th>
+                                                                <th>TÊN THUỐC</th>
+                                                                <th>ĐƠN VỊ TÍNH</th>
+                                                                <th>SỐ LƯỢNG</th>
+                                                                <th>LIỀU DÙNG</th>
+                                                                <th>CÁCH DÙNG</th>
+                                                            </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            <tr th:each="it, itStat : ${ex.prescription.items}">
+                                                                <td th:text="${itStat.count}">1</td>
+                                                                <td><strong th:text="${it.tenThuoc}">Paracetamol 500mg</strong></td>
+                                                                <td th:text="${it.donVi}">Viên</td>
+                                                                <td><strong style="color: #0369a1;" th:text="${it.soLuong}">20</strong></td>
+                                                                <td th:text="${it.lieuDung}">1 viên/lần, 2-3 lần/ngày khi sốt > 38.5</td>
+                                                                <td th:text="${it.cachDung}">Uống sau ăn</td>
+                                                            </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div th:if="${ex.prescription.items == null or #lists.isEmpty(ex.prescription.items)}" class="empty-state" style="padding: 12px; font-size: 12px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+                                                        Đơn thuốc chưa có danh mục thuốc chi tiết.
+                                                    </div>
+
+                                                    <div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 12px; color: #92400e;">
+                                                        <i class="fa-solid fa-note-sticky" style="margin-right: 6px;"></i>
+                                                        <strong>Lời dặn của bác sĩ:</strong>
+                                                        <span th:text="${ex.prescription.ghiChu != null and !ex.prescription.ghiChu.isEmpty() ? ex.prescription.ghiChu : 'Uống thuốc đúng theo hướng dẫn, kiêng rượu bia và chất kích thích, tái khám khi có dấu hiệu bất thường.'}">Uống đúng liều lượng</span>
+                                                    </div>
+                                                </div>
+
+                                                <div th:if="${ex.prescription == null}" class="empty-state" style="padding: 12px; font-size: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px;">
+                                                    <i class="fa-solid fa-circle-info" style="color: #94a3b8; margin-right: 6px;"></i> Không có đơn thuốc cho lần khám này.
+                                                </div>
+                                            </div>
+
+                                            <!-- E. Bệnh án liên kết & Tiền sử bệnh -->
+                                            <div>
+                                                <h4 style="font-size: 13px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-file-waveform"></i> E. Bệnh án liên kết & Tiền sử bệnh
+                                                </h4>
+                                                <div style="background: #f8fafc; padding: 12px 14px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 13px; display: grid; gap: 8px;">
+                                                    <div>
+                                                        <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Mã bệnh án liên kết:</span>
+                                                        <span class="id-code" style="margin-left: 6px;" th:text="${ex.idBenhan != null ? ex.idBenhan : 'Chưa liên kết bệnh án'}">BA001</span>
+                                                    </div>
+                                                    <div>
+                                                        <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Tiền sử bệnh án ghi nhận:</span>
+                                                        <div style="margin-top: 4px;">
+                                                            <span th:if="${records != null and !#lists.isEmpty(records)}" th:each="r : ${records}" class="pill pill-primary" style="margin-right: 6px; margin-bottom: 4px; display: inline-block;" th:text="${r.idBenhan + ': ' + r.tienSuBenh}">BA001: Viêm mũi dị ứng</span>
+                                                            <span th:if="${records == null or #lists.isEmpty(records)}" class="small-muted">Chưa ghi nhận tiền sử bệnh đặc biệt.</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Modal Footer -->
+                                        <div style="display: flex; justify-content: flex-end; gap: 10px; padding: 14px 24px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
+                                            <button type="button" class="btn btn-secondary" data-close-modal>
+                                                <i class="fa-solid fa-xmark"></i> Đóng
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section th:unless="${selectedPatient != null}" class="section-card">
+                        <div class="section-card-body" style="padding: 40px; text-align: center;">
+                            <i class="fa-solid fa-folder-open" style="font-size: 38px; color: #94a3b8; margin-bottom: 12px;"></i>
+                            <h3 style="color: #475569;">Vui lòng chọn một bệnh nhân từ danh sách bên trái</h3>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
+

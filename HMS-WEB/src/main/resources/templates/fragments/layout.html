@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="html_head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0284c7">
+    <title th:text="${title != null ? title + ' | XônPanh HMS' : 'XônPanh HMS'}">XônPanh HMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+    <style>
+        /* Modal and dropdown helper utilities */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.active { display: flex !important; }
+        .modal-card, .modal-container {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1001;
+        }
+        .tab-btn.active {
+            border-bottom: 2px solid #0284c7; color: #0284c7; font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+    <!-- Sidebar Fragment -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+        <!-- Topbar Fragment -->
+        <div th:replace="~{fragments/header :: header}"></div>
+
+        <!-- Alerts -->
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <!-- Page Specific Content Body -->
+        <main class="page-content">
+            <div th:replace="${content}"></div>
+        </main>
+    </div>
+</div>
+</body>
+</html>
+

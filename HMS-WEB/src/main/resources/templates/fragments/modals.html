@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="alerts">
+    <!-- Flash Success Toast -->
+    <div th:if="${successMessage}" id="toast-success" class="hms-toast show" style="position: fixed; bottom: 24px; right: 24px; z-index: 100; background: #065f46; color: white; padding: 14px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-weight: 500;">
+        <i class="fa-solid fa-circle-check" style="font-size: 18px; color: #34d399;"></i>
+        <span th:text="${successMessage}">Thao tác thành công!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #a7f3d0; margin-left: 8px; cursor: pointer;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <!-- Flash Error Toast -->
+    <div th:if="${errorMessage}" id="toast-error" class="hms-toast show" style="position: fixed; bottom: 24px; right: 24px; z-index: 100; background: #991b1b; color: white; padding: 14px 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-weight: 500;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 18px; color: #fca5a5;"></i>
+        <span th:text="${errorMessage}">Đã xảy ra lỗi!</span>
+        <button type="button" onclick="this.parentElement.remove()" style="background: none; border: none; color: #fecaca; margin-left: 8px; cursor: pointer;">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+</div>
+</body>
+</html>
+

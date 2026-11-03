@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Nhân sự & Chuyên khoa')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><i class="fa-solid fa-user-doctor"></i> TỔ CHỨC CÁN BỘ</div>
+                    <h1>Nhân sự & Chuyên khoa</h1>
+                    <p>Quản lý đội ngũ y bác sĩ, điều dưỡng, dược sĩ, thu ngân và danh mục phòng khám chuyên khoa.</p>
+                </div>
+                <div class="heading-actions">
+                    <button type="button" class="btn btn-primary" data-open-modal="modal-add-staff">
+                        <i class="fa-solid fa-user-plus"></i> Thêm nhân sự mới
+                    </button>
+                </div>
+            </div>
+
+            <!-- Staff List -->
+            <section class="section-card">
+                <div class="section-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="section-card-title"><i class="fa-solid fa-address-book"></i> Danh bạ nhân sự y tế</div>
+                        <div class="section-card-subtitle">Phân bổ nhân sự theo các vị trí làm việc và chuyên môn</div>
+                    </div>
+                </div>
+                <div class="section-card-body">
+                    <div class="table-toolbar">
+                        <form th:action="@{/staff}" method="get" style="display: flex; gap: 10px; width: 100%;">
+                            <label class="search-control">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="search" name="search" th:value="${search}" placeholder="Tìm theo tên nhân viên, mã NV, email...">
+                            </label>
+                            <select name="role" class="filter-select">
+                                <option value="all">-- Tất cả vị trí --</option>
+                                <option value="Bác sĩ" th:selected="${role == 'Bác sĩ'}">Bác sĩ</option>
+                                <option value="Y tá" th:selected="${role == 'Y tá'}">Y tá / Điều dưỡng</option>
+                                <option value="Dược sĩ" th:selected="${role == 'Dược sĩ'}">Dược sĩ</option>
+                                <option value="Thu ngân" th:selected="${role == 'Thu ngân'}">Thu ngân</option>
+                                <option value="Quản lý" th:selected="${role == 'Quản lý'}">Quản lý</option>
+                            </select>
+                            <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Lọc</button>
+                        </form>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>NHÂN VIÊN</th>
+                                <th>MÃ NV</th>
+                                <th>VAI TRÒ</th>
+                                <th>CHUYÊN MÔN / HỌC VỊ</th>
+                                <th>ĐIỆN THOẠI</th>
+                                <th>EMAIL</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="st : ${staffList}">
+                                <td>
+                                    <div class="patient-cell">
+                                        <span class="person-avatar" th:text="${st.initials}">NV</span>
+                                        <span>
+                                            <span class="person-name" th:text="${st.hoTen}">BS. Nguyễn Hoàng An</span>
+                                            <span class="person-meta" th:text="${st.gioiTinh}">Nam</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td><span class="id-code" th:text="${st.idNv}">NV001</span></td>
+                                <td>
+                                    <span class="pill"
+                                          th:classappend="${st.vaiTro == 'Bác sĩ' ? 'pill-primary' : (st.vaiTro == 'Quản lý' ? 'pill-warning' : 'pill-success')}"
+                                          th:text="${st.vaiTro}">Bác sĩ</span>
+                                </td>
+                                <td th:text="${st.specialtyDetail != null and !st.specialtyDetail.isEmpty() ? st.specialtyDetail : '—'}">Thạc sĩ · Nội tổng hợp</td>
+                                <td th:text="${st.phoneDisplay}">0903001001</td>
+                                <td th:text="${st.email}">an.nguyen@hms.local</td>
+                                <td><span class="pill pill-success" th:text="${st.trangThai}">Đang làm việc</span></td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button" class="btn btn-secondary btn-sm" th:attr="data-open-modal='modal-edit-staff-' + ${st.idNv}" title="Chỉnh sửa">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <form th:action="@{/staff/delete}" method="post" style="display: inline; margin: 0;">
+                                            <input type="hidden" name="idNv" th:value="${st.idNv}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Xóa nhân sự"
+                                                    onclick="return confirm('Bạn có chắc chắn muốn xóa nhân sự ' + this.form.idNv.value + '?');">
+                                                <i class="fa-solid fa-trash-can" style="color: #ef4444;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Modal Sửa nhân sự -->
+                                    <div th:id="'modal-edit-staff-' + ${st.idNv}" class="modal-overlay">
+                                        <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 600px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                                                <div>
+                                                    <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Chỉnh sửa nhân sự</h3>
+                                                    <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;" th:text="${'Mã nhân viên: ' + st.idNv}">NV001</p>
+                                                </div>
+                                                <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+
+                                            <form th:action="@{/staff/update}" method="post">
+                                                <input type="hidden" name="idNv" th:value="${st.idNv}">
+                                                <div class="form-grid">
+                                                    <label class="form-field full">
+                                                        <span>Họ và tên *</span>
+                                                        <input type="text" name="hoTen" th:value="${st.hoTen}" required>
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Vai trò làm việc *</span>
+                                                        <select name="vaiTro" required>
+                                                            <option value="Bác sĩ" th:selected="${st.vaiTro == 'Bác sĩ'}">Bác sĩ</option>
+                                                            <option value="Y tá" th:selected="${st.vaiTro == 'Y tá'}">Y tá / Điều dưỡng</option>
+                                                            <option value="Dược sĩ" th:selected="${st.vaiTro == 'Dược sĩ'}">Dược sĩ</option>
+                                                            <option value="Thu ngân" th:selected="${st.vaiTro == 'Thu ngân'}">Thu ngân</option>
+                                                            <option value="Quản lý" th:selected="${st.vaiTro == 'Quản lý'}">Quản lý</option>
+                                                        </select>
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Giới tính</span>
+                                                        <select name="gioiTinh">
+                                                            <option value="Nam" th:selected="${st.gioiTinh == 'Nam'}">Nam</option>
+                                                            <option value="Nữ" th:selected="${st.gioiTinh == 'Nữ'}">Nữ</option>
+                                                            <option value="Khác" th:selected="${st.gioiTinh == 'Khác'}">Khác</option>
+                                                        </select>
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Số điện thoại</span>
+                                                        <input type="text" name="phone" th:value="${st.phoneDisplay != '—' ? st.phoneDisplay : ''}">
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Email</span>
+                                                        <input type="email" name="email" th:value="${st.email}">
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Ngày sinh</span>
+                                                        <input type="date" name="ngaySinh" th:value="${st.ngaySinh}">
+                                                    </label>
+
+                                                    <label class="form-field">
+                                                        <span>Trạng thái</span>
+                                                        <select name="trangThai">
+                                                            <option value="Đang làm việc" th:selected="${st.trangThai == 'Đang làm việc'}">Đang làm việc</option>
+                                                            <option value="Nghỉ phép" th:selected="${st.trangThai == 'Nghỉ phép'}">Nghỉ phép</option>
+                                                            <option value="Đã nghỉ việc" th:selected="${st.trangThai == 'Đã nghỉ việc'}">Đã nghỉ việc</option>
+                                                        </select>
+                                                    </label>
+
+                                                    <!-- Chỉ hiện khi vai trò = Bác sĩ -->
+                                                    <th:block th:replace="~{fragments/staff-doctor-fields :: fields(${st.idCk}, ${st.idPk}, ${st.hocVi}, ${st.soCchn})}"></th:block>
+
+                                                    <label class="form-field full" data-detail-field>
+                                                        <span data-detail-label>Chuyên môn / Ghi chú</span>
+                                                        <input type="text" name="specialtyDetail" data-detail-input th:value="${st.specialtyDetail}" placeholder="Ví dụ: Thạc sĩ · Nội khoa">
+                                                    </label>
+                                                </div>
+
+                                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                                                    <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Cập nhật</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(staffList)}">
+                                <td colspan="8" class="empty-state">Không tìm thấy nhân sự phù hợp.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Specialties and Rooms -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                <!-- Specialties -->
+                <section class="section-card">
+                    <div class="section-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-layer-group"></i> Khoa chuyên môn</div>
+                            <div class="section-card-subtitle">Các chuyên khoa lâm sàng và cận lâm sàng</div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-add-specialty">
+                            <i class="fa-solid fa-plus"></i> Thêm khoa
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ CK</th>
+                                <th>TÊN KHOA</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ck : ${specialties}">
+                                <td><span class="id-code" th:text="${ck.idCk}">CK01</span></td>
+                                <td><strong th:text="${ck.tenCk}">Nội tổng hợp</strong></td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button" class="btn btn-secondary btn-sm" th:attr="data-open-modal='modal-edit-specialty-' + ${ck.idCk}" title="Sửa">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <form th:action="@{/staff/specialty/delete}" method="post" style="display: inline; margin: 0;">
+                                            <input type="hidden" name="idCk" th:value="${ck.idCk}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Xóa chuyên khoa"
+                                                    onclick="return confirm('Bạn có chắc chắn muốn xóa chuyên khoa ' + this.form.idCk.value + '?');">
+                                                <i class="fa-solid fa-trash-can" style="color: #ef4444;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Modal Sửa chuyên khoa -->
+                                    <div th:id="'modal-edit-specialty-' + ${ck.idCk}" class="modal-overlay">
+                                        <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 460px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                                                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Sửa chuyên khoa</h3>
+                                                <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            <form th:action="@{/staff/specialty/update}" method="post">
+                                                <input type="hidden" name="idCk" th:value="${ck.idCk}">
+                                                <div class="form-grid">
+                                                    <label class="form-field full">
+                                                        <span>Mã chuyên khoa</span>
+                                                        <input type="text" th:value="${ck.idCk}" disabled style="background: #f1f5f9;">
+                                                    </label>
+                                                    <label class="form-field full">
+                                                        <span>Tên chuyên khoa *</span>
+                                                        <input type="text" name="tenCk" th:value="${ck.tenCk}" required>
+                                                    </label>
+                                                </div>
+                                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                                                    <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Lưu thay đổi</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Rooms -->
+                <section class="section-card">
+                    <div class="section-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div class="section-card-title"><i class="fa-solid fa-door-open"></i> Phòng khám bệnh</div>
+                            <div class="section-card-subtitle">Vị trí buồng khám và trạng thái hoạt động</div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-add-room">
+                            <i class="fa-solid fa-plus"></i> Thêm phòng
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>MÃ PHÒNG</th>
+                                <th>TÊN PHÒNG KHÁM</th>
+                                <th>SỐ PHÒNG</th>
+                                <th>CHUYÊN KHOA</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>TÁC VỤ</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="r : ${rooms}">
+                                <td><span class="id-code" th:text="${r.idPk}">PK01</span></td>
+                                <td><strong th:text="${r.tenPhong}">Phòng khám Nội tổng hợp</strong></td>
+                                <td th:text="${r.soPhong}">A-101</td>
+                                <td th:text="${r.tenChuyenKhoa != null ? r.tenChuyenKhoa : r.idCk}">Nội tổng hợp</td>
+                                <td><span class="pill pill-success" th:text="${r.trangThai}">Hoạt động</span></td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button type="button" class="btn btn-secondary btn-sm" th:attr="data-open-modal='modal-edit-room-' + ${r.idPk}" title="Sửa">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </button>
+                                        <form th:action="@{/staff/room/delete}" method="post" style="display: inline; margin: 0;">
+                                            <input type="hidden" name="idPk" th:value="${r.idPk}">
+                                            <button type="submit" class="btn btn-secondary btn-sm" title="Xóa phòng khám"
+                                                    onclick="return confirm('Bạn có chắc chắn muốn xóa phòng khám ' + this.form.idPk.value + '?');">
+                                                <i class="fa-solid fa-trash-can" style="color: #ef4444;"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Modal Sửa phòng khám -->
+                                    <div th:id="'modal-edit-room-' + ${r.idPk}" class="modal-overlay">
+                                        <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 500px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+                                                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Sửa phòng khám</h3>
+                                                <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                            <form th:action="@{/staff/room/update}" method="post">
+                                                <input type="hidden" name="idPk" th:value="${r.idPk}">
+                                                <div class="form-grid">
+                                                    <label class="form-field full">
+                                                        <span>Tên phòng khám *</span>
+                                                        <input type="text" name="tenPhong" th:value="${r.tenPhong}" required>
+                                                    </label>
+                                                    <label class="form-field">
+                                                        <span>Số / Vị trí phòng *</span>
+                                                        <input type="text" name="soPhong" th:value="${r.soPhong}" required placeholder="Ví dụ: A-101">
+                                                    </label>
+                                                    <label class="form-field">
+                                                        <span>Chuyên khoa *</span>
+                                                        <select name="idCk" required>
+                                                            <option th:each="ck : ${specialties}" th:value="${ck.idCk}" th:text="${ck.tenCk}" th:selected="${ck.idCk == r.idCk}">Khoa</option>
+                                                        </select>
+                                                    </label>
+                                                    <label class="form-field full">
+                                                        <span>Trạng thái hoạt động</span>
+                                                        <select name="trangThai">
+                                                            <option value="Hoạt động" th:selected="${r.trangThai == 'Hoạt động'}">Hoạt động</option>
+                                                            <option value="Tạm dừng" th:selected="${r.trangThai == 'Tạm dừng'}">Tạm dừng</option>
+                                                        </select>
+                                                    </label>
+                                                </div>
+                                                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                                                    <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Lưu thay đổi</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- MODAL: Thêm nhân sự mới -->
+<div id="modal-add-staff" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 600px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Thêm nhân sự mới</h3>
+                <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Tạo hồ sơ cán bộ y tế trong hệ thống XônPanh</p>
+            </div>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <form th:action="@{/staff/create}" method="post">
+            <div class="form-grid">
+                <label class="form-field full">
+                    <span>Họ và tên *</span>
+                    <input type="text" name="hoTen" required placeholder="Ví dụ: BS. Trần Quốc Tuấn">
+                </label>
+
+                <label class="form-field">
+                    <span>Vai trò làm việc *</span>
+                    <select name="vaiTro" required>
+                        <option value="Bác sĩ">Bác sĩ</option>
+                        <option value="Y tá">Y tá / Điều dưỡng</option>
+                        <option value="Dược sĩ">Dược sĩ</option>
+                        <option value="Thu ngân">Thu ngân</option>
+                        <option value="Quản lý">Quản lý</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>Giới tính</span>
+                    <select name="gioiTinh">
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </label>
+
+                <label class="form-field">
+                    <span>Số điện thoại</span>
+                    <input type="text" name="phone" required placeholder="0901234567">
+                </label>
+
+                <label class="form-field">
+                    <span>Email</span>
+                    <input type="email" name="email" required placeholder="tuan.tran@hms.local">
+                </label>
+
+                <label class="form-field">
+                    <span>Ngày sinh</span>
+                    <input type="date" name="ngaySinh" required value="1988-01-01">
+                </label>
+
+                <label class="form-field">
+                    <span>Trạng thái</span>
+                    <select name="trangThai">
+                        <option value="Đang làm việc">Đang làm việc</option>
+                        <option value="Nghỉ phép">Nghỉ phép</option>
+                    </select>
+                </label>
+
+                <!-- Chỉ hiện khi vai trò = Bác sĩ -->
+                <th:block th:replace="~{fragments/staff-doctor-fields :: fields(null, null, null, null)}"></th:block>
+
+                <label class="form-field full" data-detail-field>
+                    <span data-detail-label>Chuyên môn / Ghi chú</span>
+                    <input type="text" name="specialtyDetail" data-detail-input data-req placeholder="Ví dụ: Chuyên viên viện phí">
+                </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Thêm nhân sự</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Thêm chuyên khoa mới -->
+<div id="modal-add-specialty" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 460px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Thêm chuyên khoa mới</h3>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form th:action="@{/staff/specialty/create}" method="post">
+            <div class="form-grid">
+                <label class="form-field full">
+                    <span>Mã chuyên khoa (để trống để tự sinh CKxx)</span>
+                    <input type="text" name="idCk" placeholder="Ví dụ: CK05">
+                </label>
+                <label class="form-field full">
+                    <span>Tên chuyên khoa *</span>
+                    <input type="text" name="tenCk" required placeholder="Ví dụ: Chấn thương chỉnh hình">
+                </label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Tạo chuyên khoa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Thêm phòng khám mới -->
+<div id="modal-add-room" class="modal-overlay">
+    <div class="modal-card" style="background: white; border-radius: 16px; width: min(100% - 32px, 500px); padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="font-size: 18px; font-weight: 700; color: #1e293b; margin: 0;">Thêm phòng khám mới</h3>
+            <button type="button" data-close-modal style="background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form th:action="@{/staff/room/create}" method="post">
+            <div class="form-grid">
+                <label class="form-field full">
+                    <span>Mã phòng (để trống để tự sinh PKxx)</span>
+                    <input type="text" name="idPk" placeholder="Ví dụ: PK05">
+                </label>
+                <label class="form-field full">
+                    <span>Tên phòng khám *</span>
+                    <input type="text" name="tenPhong" required placeholder="Ví dụ: Phòng khám Ngoại chấn thương">
+                </label>
+                <label class="form-field">
+                    <span>Số / Vị trí phòng *</span>
+                    <input type="text" name="soPhong" required placeholder="Ví dụ: B-201">
+                </label>
+                <label class="form-field">
+                    <span>Chuyên khoa trực thuộc *</span>
+                    <select name="idCk" required>
+                        <option th:each="ck : ${specialties}" th:value="${ck.idCk}" th:text="${ck.tenCk}">Khoa</option>
+                    </select>
+                </label>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" data-close-modal>Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Tạo phòng khám</button>
+            </div>
+        </form>
+    </div>
+</div>
+<style>[data-doctor-fields][hidden],[data-detail-field][hidden]{display:none !important;}</style>
+<script>
+/* Form nhân sự: chỉ vai trò "Bác sĩ" mới có Chuyên khoa trực thuộc + Số/Vị trí phòng (phòng lọc theo chuyên khoa). */
+(function () {
+    var DETAIL = {
+        'Y tá':     { label: 'Cấp bậc / Trình độ điều dưỡng', ph: 'Ví dụ: Điều dưỡng đại học', max: 50 },
+        'Dược sĩ':  { label: 'Bằng cấp dược',                 ph: 'Ví dụ: Dược sĩ đại học',    max: 100 },
+        'Thu ngân': { label: 'Chuyên môn / Ghi chú',          ph: 'Ví dụ: Chuyên viên viện phí', max: 150 },
+        'Quản lý':  { label: 'Chức vụ / Ghi chú',             ph: 'Ví dụ: Phó Giám đốc điều hành', max: 150 }
+    };
+    function sync(form) {
+        var role = form.querySelector('select[name="vaiTro"]');
+        var box = form.querySelector('[data-doctor-fields]');
+        if (!role || !box) return;
+        var ck = box.querySelector('[data-ck-select]');
+        var room = box.querySelector('[data-room-select]');
+        var isDoctor = role.value === 'Bác sĩ';
+        // Ô "Chuyên môn / Học vị": Bác sĩ đã có ô Học vị riêng nên ẩn; Y tá -> yta.cap_bac, Dược sĩ -> duocsi.bang_cap,
+        // Thu ngân / Quản lý -> ghi chú chung (nhanvien.chi_tiet)
+        var df = form.querySelector('[data-detail-field]');
+        if (df) {
+            var di = df.querySelector('[data-detail-input]');
+            var dl = df.querySelector('[data-detail-label]');
+            var cfg = DETAIL[role.value];
+            df.hidden = isDoctor;
+            di.disabled = isDoctor;
+            di.required = !isDoctor && di.hasAttribute('data-req');
+            if (cfg) { dl.textContent = cfg.label; di.placeholder = cfg.ph; di.maxLength = cfg.max; }
+        }
+        box.hidden = !isDoctor;
+        ck.disabled = !isDoctor;          // trường bị disabled thì không được gửi lên server
+        room.disabled = !isDoctor;
+        ck.required = isDoctor;
+        room.required = isDoctor;
+        box.querySelectorAll('[data-doctor-input]').forEach(function (i) {
+            i.disabled = !isDoctor;
+            i.required = isDoctor;
+        });
+        Array.prototype.forEach.call(room.options, function (o) {
+            if (!o.value) return;
+            var ok = ck.value !== '' && o.getAttribute('data-ck') === ck.value;
+            o.hidden = !ok;
+            o.disabled = !ok;
+        });
+        var sel = room.options[room.selectedIndex];
+        if (sel && sel.value && sel.disabled) room.value = '';
+    }
+    document.querySelectorAll('form').forEach(function (f) {
+        if (!f.querySelector('[data-doctor-fields]')) return;
+        f.addEventListener('change', function (e) {
+            if (e.target.name === 'vaiTro' || e.target.name === 'idCk') sync(f);
+        });
+        sync(f);
+    });
+})();
+</script>
+</body>
+</html>

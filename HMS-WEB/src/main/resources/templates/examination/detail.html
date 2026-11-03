@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: html_head('Khám bệnh & Kê đơn thuốc')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <div class="workspace">
+        <div th:replace="~{fragments/header :: header}"></div>
+        <div th:replace="~{fragments/modals :: alerts}"></div>
+
+        <main class="page-content">
+            <div class="page-heading">
+                <div>
+                    <div class="eyebrow"><a th:href="@{/examination}" style="color: #0284c7;"><i class="fa-solid fa-arrow-left"></i> Quay lại hàng đợi</a></div>
+                    <h1>Phiếu khám bệnh & Kê đơn thuốc</h1>
+                    <p>Ghi nhận khám lâm sàng, chẩn đoán mã ICD, chỉ định cận lâm sàng và kê đơn thuốc cho người bệnh.</p>
+                </div>
+                <div class="heading-actions">
+                    <a th:href="@{/medical-records(selectedId=${patient.idBn})}" class="btn btn-secondary">
+                        <i class="fa-solid fa-folder-medical"></i> Xem hồ sơ bệnh án
+                    </a>
+                </div>
+            </div>
+
+            <!-- Patient Information Banner -->
+            <div class="profile-summary" style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span class="profile-big" style="width: 52px; height: 52px; border-radius: 14px; background: #e0f2fe; color: #0284c7; display: grid; place-items: center; font-size: 24px;">
+                        <i class="fa-solid fa-user-injured"></i>
+                    </span>
+                    <div>
+                        <h2 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0;" th:text="${patient.hoTen}">Nguyễn Minh Anh</h2>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                            Mã BN: <strong th:text="${patient.idBn}">BN001</strong> ·
+                            Giới tính: <span th:text="${patient.gioiTinh}">Nữ</span> ·
+                            Ngày sinh: <span th:text="${patient.ngaySinh != null ? patient.ngaySinh : '—'}">1998-03-14</span> ·
+                            Điện thoại: <span th:text="${patient.phoneDisplay}">0901234567</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <span class="pill pill-primary" style="font-size: 13px; padding: 6px 14px;" th:text="${exam.trangThai}">Chờ khám</span>
+                </div>
+            </div>
+
+            <form th:action="@{/examination/save}" method="post" th:object="${examForm}">
+                <input type="hidden" name="idPhieukham" th:value="${exam.idPhieukham}">
+                <input type="hidden" name="idNv" th:value="${currentStaff != null and currentStaff.vaiTro == 'Bác sĩ' ? currentStaff.idNv : exam.idNv}">
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Examination & Clinical Findings -->
+                    <div class="lg:col-span-2" style="display: grid; gap: 20px;">
+                        <!-- Clinical details -->
+                        <section class="section-card">
+                            <div class="section-card-header">
+                                <div>
+                                    <div class="section-card-title"><i class="fa-solid fa-stethoscope"></i> 1. Khám lâm sàng & Chẩn đoán</div>
+                                    <div class="section-card-subtitle">Triệu chứng, giờ khám và mã chẩn đoán ICD-10</div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="form-grid">
+                                    <label class="form-field">
+                                        <span>Giờ tiếp nhận / khám</span>
+                                        <input type="time" name="thoiGianKham" th:value="${exam.thoiGianKham != null and !exam.thoiGianKham.isEmpty() ? exam.thoiGianKham : '08:30'}">
+                                    </label>
+
+                                    <label class="form-field">
+                                        <span>Chẩn đoán mã ICD-10 *</span>
+                                        <select name="idCd" required>
+                                            <option value="">-- Chọn chẩn đoán ICD --</option>
+                                            <option th:each="cd : ${diagnoses}"
+                                                    th:value="${cd.idCd}"
+                                                    th:text="${cd.displayName}"
+                                                    th:selected="${cd.idCd == exam.idCd}">J06.9 — Nhiễm trùng đường hô hấp</option>
+                                        </select>
+                                    </label>
+
+                                    <label class="form-field full">
+                                        <span>Triệu chứng / Dấu hiệu sinh tồn / Khám lâm sàng *</span>
+                                        <textarea name="trieuChung" rows="3" required placeholder="Ghi nhận triệu chứng cơ năng, thực thể, huyết áp, mạch, nhiệt độ..." th:text="${exam.trieuChung}"></textarea>
+                                    </label>
+
+                                    <label class="form-field full">
+                                        <span>Kết luận chuyên môn / Hướng xử trí</span>
+                                        <textarea name="ketLuan" rows="2" placeholder="Kết luận chuyên môn, hướng dẫn chăm sóc hoặc lời dặn..." th:text="${exam.ketLuan}"></textarea>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Form Kê đơn thuốc điều trị -->
+                        <section class="section-card">
+                            <div class="section-card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="section-card-title"><i class="fa-solid fa-prescription-bottle-medical"></i> 2. Kê đơn thuốc điều trị</div>
+                                    <div class="section-card-subtitle">Chỉ định thuốc, số lượng, liều dùng và cách dùng</div>
+                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" id="btn-add-drug-row">
+                                    <i class="fa-solid fa-plus"></i> Thêm thuốc
+                                </button>
+                            </div>
+                            <div class="section-card-body">
+                                <div id="prescription-rows-container" style="display: grid; gap: 12px;">
+                                    <!-- Render existing medicines if present, else empty rows -->
+                                    <th:block th:if="${exam.hasPrescriptionItems()}">
+                                        <div th:each="item : ${exam.prescription.items}"
+                                             class="rx-row"
+                                             style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: grid; grid-template-columns: minmax(0, 2fr) 90px minmax(0, 1.2fr) minmax(0, 1.2fr) 36px; gap: 10px; align-items: end;">
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Thuốc</span>
+                                                <select name="medicineId">
+                                                    <option value="">-- Chọn thuốc --</option>
+                                                    <option th:each="m : ${medicines}" th:value="${m.idThuoc}"
+                                                            th:text="${m.tenThuoc + ' (Tồn ' + m.soLuongTonKho + ')'}"
+                                                            th:attr="data-price=${m.idThuoc == 'T001' ? 800 : (m.idThuoc == 'T002' ? 2000 : (m.idThuoc == 'T003' ? 1500 : (m.idThuoc == 'T004' ? 3000 : 4000)))}"
+                                                            th:selected="${m.idThuoc == item.idThuoc}">Paracetamol 500mg</option>
+                                                </select>
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Số lượng</span>
+                                                <input type="number" name="quantity" th:value="${item.soLuong}" min="1">
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Liều dùng</span>
+                                                <input type="text" name="dosage" th:value="${item.lieuDung}" placeholder="1 viên/lần">
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Cách dùng</span>
+                                                <input type="text" name="usage" th:value="${item.cachDung}" placeholder="Sau ăn">
+                                            </label>
+                                            <button type="button" class="btn-icon btn-remove-rx-row" title="Xóa dòng thuốc">
+                                                <i class="fa-solid fa-trash-can" style="color: #ef4444;"></i>
+                                            </button>
+                                            <label class="form-field full" style="grid-column: 1 / -1; margin-top: 4px;">
+                                                <span>Ghi chú riêng</span>
+                                                <input type="text" name="medicineNote" th:value="${item.ghiChu}" placeholder="Lưu ý khi dùng thuốc...">
+                                            </label>
+                                        </div>
+                                    </th:block>
+
+                                    <!-- If no prescription exists yet, start with 1 clean template row -->
+                                    <th:block th:unless="${exam.hasPrescriptionItems()}">
+                                        <div class="rx-row"
+                                             style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; display: grid; grid-template-columns: minmax(0, 2fr) 90px minmax(0, 1.2fr) minmax(0, 1.2fr) 36px; gap: 10px; align-items: end;">
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Thuốc</span>
+                                                <select name="medicineId">
+                                                    <option value="">-- Chọn thuốc --</option>
+                                                    <option th:each="m : ${medicines}" th:value="${m.idThuoc}"
+                                                            th:text="${m.tenThuoc + ' (Tồn ' + m.soLuongTonKho + ')'}"
+                                                            th:attr="data-price=${m.idThuoc == 'T001' ? 800 : (m.idThuoc == 'T002' ? 2000 : (m.idThuoc == 'T003' ? 1500 : (m.idThuoc == 'T004' ? 3000 : 4000)))}">Paracetamol 500mg</option>
+                                                </select>
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Số lượng</span>
+                                                <input type="number" name="quantity" value="1" min="1">
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Liều dùng</span>
+                                                <input type="text" name="dosage" placeholder="1 viên/lần">
+                                            </label>
+                                            <label class="form-field" style="margin: 0;">
+                                                <span>Cách dùng</span>
+                                                <input type="text" name="usage" placeholder="Sau ăn">
+                                            </label>
+                                            <button type="button" class="btn-icon btn-remove-rx-row" title="Xóa dòng thuốc">
+                                                <i class="fa-solid fa-trash-can" style="color: #ef4444;"></i>
+                                            </button>
+                                            <label class="form-field full" style="grid-column: 1 / -1; margin-top: 4px;">
+                                                <span>Ghi chú riêng</span>
+                                                <input type="text" name="medicineNote" placeholder="Lưu ý khi dùng thuốc...">
+                                            </label>
+                                        </div>
+                                    </th:block>
+                                </div>
+
+                                <!-- Live estimated total -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 10px 14px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 10px;">
+                                    <span style="font-size: 12px; color: #0369a1; font-weight: 600;">
+                                        <i class="fa-solid fa-calculator" style="margin-right: 4px;"></i> Tổng tiền thuốc ước tính:
+                                    </span>
+                                    <strong id="rx-estimated-total" style="font-size: 14px; color: #0284c7;" th:text="${exam.prescription != null ? #numbers.formatDecimal(exam.prescription.tongTien, 0, 'POINT', 0, 'POINT') + ' đ' : '0 đ'}">0 đ</strong>
+                                </div>
+
+                                <div class="form-grid" style="margin-top: 14px; grid-template-columns: 160px 1fr;">
+                                    <label class="form-field">
+                                        <span>Ngày kê đơn</span>
+                                        <input type="date" name="rxNgayKe" th:value="${exam.prescription != null ? exam.prescription.ngayKe : todayDate}">
+                                    </label>
+
+                                    <label class="form-field">
+                                        <span>Lời dặn chung cho đơn thuốc</span>
+                                        <input type="text" name="rxGhiChu" placeholder="Ví dụ: Uống sau khi ăn, kiêng đồ chua cay, tái khám sau 7 ngày..." th:value="${exam.prescription != null ? exam.prescription.ghiChu : ''}">
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Right Column: Lab Orders & History -->
+                    <div style="display: grid; gap: 20px;">
+                        <!-- Lab test ordering -->
+                        <section class="section-card">
+                            <div class="section-card-header">
+                                <div>
+                                    <div class="section-card-title"><i class="fa-solid fa-vials"></i> 3. Chỉ định xét nghiệm</div>
+                                    <div class="section-card-subtitle">Đánh dấu xét nghiệm cần thực hiện</div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div style="display: grid; gap: 10px;">
+                                    <label th:each="lab : ${labTypes}" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; background: #fff;">
+                                        <span style="display: flex; align-items: center; gap: 10px;">
+                                            <input type="checkbox" name="labIds" th:value="${lab.idLxn}"
+                                                   th:checked="${exam.hasLab(lab.idLxn)}" style="width: 16px; height: 16px;">
+                                            <strong th:text="${lab.tenLxn}">Công thức máu</strong>
+                                        </span>
+                                        <span style="font-size: 12px; color: #0284c7; font-weight: 600;" th:text="${#numbers.formatDecimal(lab.chiPhi, 0, 'POINT', 0, 'POINT') + ' đ'}">180.000 đ</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Past Medical History -->
+                        <section class="section-card">
+                            <div class="section-card-header">
+                                <div>
+                                    <div class="section-card-title"><i class="fa-solid fa-notes-medical"></i> Tiền sử bệnh án</div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div th:each="mr : ${medicalRecords}" style="margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                                    <strong style="color: #0369a1;" th:text="${mr.idBenhan}">BA001</strong> ·
+                                    <span style="font-size: 11px; color: #64748b;" th:text="${mr.ngayTao}">2026-08-15</span>
+                                    <p style="font-size: 12px; margin: 4px 0 0 0;" th:text="${mr.tienSuBenh}">Viêm mũi dị ứng</p>
+                                </div>
+                                <div th:if="${#lists.isEmpty(medicalRecords)}" class="small-muted">Chưa ghi nhận tiền sử bệnh án.</div>
+                            </div>
+                        </section>
+
+                        <!-- Submit actions -->
+                        <div style="background: white; border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px; display: grid; gap: 10px;">
+                            <button type="submit" class="btn btn-primary" style="justify-content: center; padding: 12px; font-size: 15px;">
+                                <i class="fa-solid fa-floppy-disk"></i> Lưu kết quả khám & Đơn thuốc
+                            </button>
+                            <a th:href="@{/examination}" class="btn btn-secondary" style="justify-content: center;">
+                                Hủy thay đổi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+</div>
+
+</body>
+</html>
+
